@@ -146,26 +146,17 @@ const login = async (req, res) => {
       });
     }
 
-    const { loginId, password } = req.body;
+    const { mesId, password } = req.body;
 
-    let user;
-    
-    // Try to find by email first
-    user = await prisma.user.findUnique({
-      where: { email: loginId }
+    // Find user by MES ID
+    const user = await prisma.user.findUnique({
+      where: { mesId }
     });
-    
-    // If not found by email, try MES ID
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { mesId: loginId }
-      });
-    }
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials. Admin use Email, Users use MES ID.'
+        message: 'Invalid MES ID or password'
       });
     }
 
