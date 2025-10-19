@@ -45,6 +45,16 @@ async function initializeAdmin() {
         await loadEvents();
         console.log('Admin.js: Events loaded, setting up handlers...');
         setupEventHandlers();
+        
+        // Check if there's an eventId in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('eventId');
+        if (eventId) {
+            console.log('Admin.js: Found eventId in URL:', eventId);
+            // Open the event details modal
+            await viewEventDetails(parseInt(eventId));
+        }
+        
         console.log('Admin.js: Initialization complete');
     } catch (error) {
         console.error('Admin.js: Initialization error:', error);
@@ -599,11 +609,29 @@ function downloadQRCode() {
     link.click();
 }
 
+// View event details - shows attendance modal for specific event
+async function viewEventDetails(eventId) {
+    console.log('Admin.js: viewEventDetails called for eventId:', eventId);
+    
+    // Find the event in the loaded events
+    const event = allEvents.find(e => e.id === eventId);
+    
+    if (!event) {
+        console.error('Admin.js: Event not found:', eventId);
+        alert('Event not found. Please refresh the page and try again.');
+        return;
+    }
+    
+    // Open the attendance modal for this event
+    await viewEventAttendance(eventId);
+}
+
 // Make functions globally available
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
 window.showEventQR = showEventQR;
 window.viewEventAttendance = viewEventAttendance;
+window.viewEventDetails = viewEventDetails;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);
