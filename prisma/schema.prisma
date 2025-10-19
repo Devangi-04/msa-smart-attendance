@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int          @id @default(autoincrement())
+  email           String       @unique
+  password        String
+  name            String       // Full Name
+  role            String       @default("USER") // ADMIN or USER
+  
+  // MSA Student Information
+  rollNo          String?      @unique
+  stream          String?      // e.g., Science, Commerce, Arts
+  year            String?      // e.g., FY, SY, TY
+  division        String?      // e.g., A, B, C
+  msaTeam         String?      // MSA Team assignment
+  department      String?      // Department name
+  gender          String?      // Male, Female, Other
+  dateOfBirth     DateTime?
+  admissionNumber String?      @unique
+  phone           String?
+  mesId           String?      @unique // MES ID
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  attendance      Attendance[]
+  createdEvents   Event[]      @relation("CreatedBy")
+}
+
+model Event {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  date        DateTime
+  endDate     DateTime?
+  latitude    Float
+  longitude   Float
+  radius      Int
+  status      String       @default("UPCOMING") // UPCOMING, ACTIVE, COMPLETED, CANCELLED
+  qrCode      String?
+  venue       String?
+  capacity    Int?
+  createdById Int
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendance  Attendance[]
+}
+
+model Attendance {
+  id              Int      @id @default(autoincrement())
+  eventId         Int
+  userId          Int
+  latitude        Float
+  longitude       Float
+  markedAt        DateTime @default(now())
+  reportingTime   DateTime @default(now()) // Time when student reported
+  lecturesMissed  Int?     @default(0)     // Number of lectures missed for this event
+  device          String?
+  ipAddress       String?
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([eventId, userId])
+}
