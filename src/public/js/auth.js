@@ -186,7 +186,6 @@ if (document.getElementById('registerForm')) {
         
         // MSA specific fields
         const rollNo = document.getElementById('rollNo').value;
-        const stream = document.getElementById('stream').value;
         const year = document.getElementById('year').value;
         const division = document.getElementById('division').value;
         const msaTeam = document.getElementById('msaTeam').value;
@@ -220,7 +219,6 @@ if (document.getElementById('registerForm')) {
                     password,
                     // MSA specific fields
                     rollNo,
-                    stream,
                     year,
                     division,
                     msaTeam: msaTeam || undefined,
