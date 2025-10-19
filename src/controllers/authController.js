@@ -148,19 +148,15 @@ const login = async (req, res) => {
 
     const { loginId, password } = req.body;
 
-    // Determine if loginId is email or MES ID
-    // Email contains @ symbol, MES ID doesn't
-    const isEmail = loginId.includes('@');
-    
     let user;
     
-    if (isEmail) {
-      // Try to find by email (for admin)
-      user = await prisma.user.findUnique({
-        where: { email: loginId }
-      });
-    } else {
-      // Try to find by MES ID (for regular users)
+    // Try to find by email first
+    user = await prisma.user.findUnique({
+      where: { email: loginId }
+    });
+    
+    // If not found by email, try MES ID
+    if (!user) {
       user = await prisma.user.findUnique({
         where: { mesId: loginId }
       });
