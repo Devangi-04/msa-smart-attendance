@@ -26,7 +26,7 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body('mesId').trim().notEmpty().withMessage('MES ID is required'),
     body('password').notEmpty().withMessage('Password is required')
   ],
   login

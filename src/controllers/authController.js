@@ -146,17 +146,17 @@ const login = async (req, res) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { mesId, password } = req.body;
 
-    // Find user
+    // Find user by MES ID
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { mesId }
     });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid MES ID or password'
       });
     }
 
@@ -166,7 +166,7 @@ const login = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid MES ID or password'
       });
     }
 
