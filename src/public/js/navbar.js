@@ -177,7 +177,7 @@
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                oldPassword: oldPassword,
+                currentPassword: oldPassword,
                 newPassword: newPassword
             })
         })
