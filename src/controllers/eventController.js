@@ -486,7 +486,7 @@ const exportAttendance = async (req, res) => {
         sno: index + 1,
         rollNo: att.user.rollNo || 'N/A',
         name: att.user.name,
-        class: att.user.year && att.user.stream ? `${att.user.year} ${att.user.stream}` : 'N/A',
+        class: att.user.year ? `${att.user.year} ${att.user.department || ''}`.trim() : att.user.department || 'N/A',
         division: att.user.division || 'N/A',
         department: att.user.department || 'N/A',
         msaTeam: att.user.msaTeam || 'N/A',

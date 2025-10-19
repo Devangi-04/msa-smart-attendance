@@ -128,9 +128,11 @@ const markAttendance = async (req, res) => {
             name: true,
             email: true,
             rollNo: true,
-            stream: true,
             year: true,
-            division: true
+            division: true,
+            department: true,
+            msaTeam: true,
+            phone: true
           }
         }
       }
@@ -190,7 +192,11 @@ const getAttendanceList = async (req, res) => {
             id: true,
             name: true,
             email: true,
+            rollNo: true,
+            year: true,
+            division: true,
             department: true,
+            msaTeam: true,
             phone: true
           }
         }
