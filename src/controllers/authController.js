@@ -217,6 +217,7 @@ const getProfile = async (req, res) => {
       select: {
         id: true,
         email: true,
+        mesId: true,
         name: true,
         role: true,
         department: true,
@@ -247,18 +248,58 @@ const getProfile = async (req, res) => {
 // Update user profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, department, phone } = req.body;
+    const { name, email, mesId, department, phone } = req.body;
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== req.user.email) {
+      const existingEmail = await prisma.user.findUnique({
+        where: { email }
+      });
+      if (existingEmail && existingEmail.id !== req.user.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already in use'
+        });
+      }
+    }
+
+    // Check if MES ID is being changed and if it's already taken
+    if (mesId) {
+      const existingMesId = await prisma.user.findUnique({
+        where: { mesId }
+      });
+      if (existingMesId && existingMesId.id !== req.user.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'MES ID already in use'
+        });
+      }
+    }
+
+    // Prepare update data
+    const updateData = {
+      name,
+      department,
+      phone
+    };
+
+    // Only update email if provided
+    if (email) {
+      updateData.email = email;
+    }
+
+    // Only update mesId if provided (allow empty string to clear it)
+    if (mesId !== undefined) {
+      updateData.mesId = mesId || null;
+    }
 
     const user = await prisma.user.update({
       where: { id: req.user.id },
-      data: {
-        name,
-        department,
-        phone
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
+        mesId: true,
         name: true,
         role: true,
         department: true,

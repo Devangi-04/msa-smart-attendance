@@ -31,6 +31,7 @@ async function loadProfile() {
             document.getElementById('profileName').textContent = user.name;
             document.getElementById('profileEmail').textContent = user.email;
             document.getElementById('profileRole').textContent = user.role;
+            document.getElementById('profileMesId').textContent = user.mesId || 'Not set';
             document.getElementById('profileDepartment').textContent = user.department || 'Not specified';
             document.getElementById('profilePhone').textContent = user.phone || 'Not specified';
             
@@ -54,6 +55,8 @@ async function loadProfile() {
             
             // Populate edit form
             document.getElementById('editName').value = user.name;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editMesId').value = user.mesId || '';
             document.getElementById('editDepartment').value = user.department || '';
             document.getElementById('editPhone').value = user.phone || '';
         }
@@ -127,6 +130,8 @@ document.getElementById('updateProfileForm').addEventListener('submit', async (e
     e.preventDefault();
     
     const name = document.getElementById('editName').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+    const mesId = document.getElementById('editMesId').value.trim();
     const department = document.getElementById('editDepartment').value.trim();
     const phone = document.getElementById('editPhone').value.trim();
     
@@ -138,7 +143,7 @@ document.getElementById('updateProfileForm').addEventListener('submit', async (e
     try {
         const data = await apiRequest('/auth/profile', {
             method: 'PUT',
-            body: JSON.stringify({ name, department, phone })
+            body: JSON.stringify({ name, email, mesId, department, phone })
         });
         
         if (data.success) {
