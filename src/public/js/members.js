@@ -162,7 +162,7 @@ function displayMembers(members) {
     tbody.innerHTML = members.map((member, index) => {
         const initials = member.name ? member.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'NA';
         const roleClass = member.role === 'ADMIN' ? 'bg-success' : 'bg-info';
-        const streamYearDiv = [member.stream, member.year, member.division].filter(Boolean).join(' / ') || 'N/A';
+        const yearDeptDiv = [member.year, member.department, member.division].filter(Boolean).join(' / ') || 'N/A';
         const joinedDate = new Date(member.createdAt).toLocaleDateString('en-IN');
         
         return `
@@ -178,7 +178,7 @@ function displayMembers(members) {
                 </td>
                 <td>${member.email}</td>
                 <td>${member.rollNo || 'N/A'}</td>
-                <td><small>${streamYearDiv}</small></td>
+                <td><small>${yearDeptDiv}</small></td>
                 <td><span class="badge bg-secondary">${member.msaTeam || 'N/A'}</span></td>
                 <td>${member.gender || 'N/A'}</td>
                 <td>${member.phone || 'N/A'}</td>
@@ -222,7 +222,7 @@ function handleSearch(e) {
             (member.rollNo && member.rollNo.toLowerCase().includes(searchTerm)) ||
             (member.phone && member.phone.includes(searchTerm)) ||
             (member.msaTeam && member.msaTeam.toLowerCase().includes(searchTerm)) ||
-            (member.stream && member.stream.toLowerCase().includes(searchTerm))
+            (member.department && member.department.toLowerCase().includes(searchTerm))
         );
     });
     
@@ -268,10 +268,6 @@ function viewMemberDetails(memberId) {
             <div class="col-md-6 mb-3">
                 <label class="text-muted small">Phone Number</label>
                 <p class="fw-bold">${member.phone || 'N/A'}</p>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="text-muted small">Stream</label>
-                <p class="fw-bold">${member.stream || 'N/A'}</p>
             </div>
             <div class="col-md-4 mb-3">
                 <label class="text-muted small">Year</label>
