@@ -176,7 +176,7 @@ function displayMembers(members) {
                         </div>
                     </div>
                 </td>
-                <td>${member.email}</td>
+                <td>${member.mesId || 'N/A'}</td>
                 <td>${member.rollNo || 'N/A'}</td>
                 <td><small>${yearDeptDiv}</small></td>
                 <td><span class="badge bg-secondary">${member.msaTeam || 'N/A'}</span></td>
@@ -218,7 +218,7 @@ function handleSearch(e) {
     const results = baseMembers.filter(member => {
         return (
             (member.name && member.name.toLowerCase().includes(searchTerm)) ||
-            (member.email && member.email.toLowerCase().includes(searchTerm)) ||
+            (member.mesId && member.mesId.toLowerCase().includes(searchTerm)) ||
             (member.rollNo && member.rollNo.toLowerCase().includes(searchTerm)) ||
             (member.phone && member.phone.includes(searchTerm)) ||
             (member.msaTeam && member.msaTeam.toLowerCase().includes(searchTerm)) ||
