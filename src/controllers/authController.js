@@ -146,17 +146,30 @@ const login = async (req, res) => {
       });
     }
 
-    const { mesId, password } = req.body;
+    const { loginId, password } = req.body;
 
-    // Find user by MES ID
-    const user = await prisma.user.findUnique({
-      where: { mesId }
-    });
+    // Determine if loginId is email or MES ID
+    // Email contains @ symbol, MES ID doesn't
+    const isEmail = loginId.includes('@');
+    
+    let user;
+    
+    if (isEmail) {
+      // Try to find by email (for admin)
+      user = await prisma.user.findUnique({
+        where: { email: loginId }
+      });
+    } else {
+      // Try to find by MES ID (for regular users)
+      user = await prisma.user.findUnique({
+        where: { mesId: loginId }
+      });
+    }
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid MES ID or password'
+        message: 'Invalid credentials. Admin use Email, Users use MES ID.'
       });
     }
 
@@ -166,7 +179,7 @@ const login = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid MES ID or password'
+        message: 'Invalid credentials. Please check your password.'
       });
     }
 

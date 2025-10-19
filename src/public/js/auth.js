@@ -124,7 +124,7 @@ if (document.getElementById('loginForm')) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const mesId = document.getElementById('mesId').value;
+        const loginId = document.getElementById('loginId').value;
         const password = document.getElementById('password').value;
         const rememberMe = document.getElementById('rememberMe').checked;
         
@@ -139,7 +139,7 @@ if (document.getElementById('loginForm')) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ mesId, password })
+                body: JSON.stringify({ loginId, password })
             });
             
             const data = await response.json();
