@@ -137,13 +137,42 @@ body {
         max-width: calc(100% - 20px);
     }
 
+    .modal-content {
+        background-color: #ffffff;
+        border-radius: 8px;
+    }
+
     .modal-body {
         padding: 15px;
+        background-color: #f8f9fa;
     }
 
     .modal-header,
     .modal-footer {
         padding: 12px 15px;
+        background-color: #ffffff;
+    }
+
+    /* Edit form specific backgrounds */
+    #editMemberModal .modal-body,
+    #eventModal .modal-body,
+    #updateProfileForm,
+    #changePasswordForm {
+        background-color: #f8f9fa;
+    }
+
+    /* Form inputs in edit modals */
+    .modal-body .form-control,
+    .modal-body .form-select {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+    }
+
+    .modal-body .form-control:focus,
+    .modal-body .form-select:focus {
+        background-color: #ffffff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
     }
 
     /* Headers */
@@ -259,6 +288,18 @@ body {
         padding: 20px 15px;
     }
 
+    /* Profile edit forms background */
+    .card-body {
+        background-color: #ffffff;
+    }
+
+    /* Form containers in cards */
+    .card .form-control,
+    .card .form-select {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+    }
+
     /* List view */
     .list-header {
         padding: 20px 15px;
@@ -365,6 +406,17 @@ body {
     .modal-content {
         height: 100%;
         border-radius: 0;
+        background-color: #ffffff;
+    }
+
+    .modal-body {
+        background-color: #f8f9fa;
+        overflow-y: auto;
+    }
+
+    .modal-header,
+    .modal-footer {
+        background-color: #ffffff;
     }
 
     /* Stats cards */
