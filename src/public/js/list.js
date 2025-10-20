@@ -100,6 +100,7 @@ function filterEventsByStatus(status) {
         'scheduled': 'Scheduled Events and Meetings',
         'missed': 'Missed Events and Meetings',
         'done': 'Completed Events and Meetings',
+        'cancelled': 'Cancelled Events and Meetings',
         'previous': 'Previous Events and Meetings'
     };
     document.getElementById('eventsTitle').textContent = titles[status] || 'Events and Meetings';
@@ -126,6 +127,8 @@ function filterEvents(events, status) {
                 return eventDate < now && !hasAttendance && eventStatus !== 'COMPLETED' && eventStatus !== 'CANCELLED';
             case 'done':
                 return eventStatus === 'COMPLETED' || (eventDate < now && hasAttendance);
+            case 'cancelled':
+                return eventStatus === 'CANCELLED';
             case 'previous':
                 // All past events regardless of status
                 return eventDate < now;
