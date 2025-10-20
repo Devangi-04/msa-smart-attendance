@@ -99,7 +99,7 @@ function filterEventsByStatus(status) {
     const filtered = filterEvents(allEvents, status);
     displayEvents(filtered);
     
-    // Update title
+    // Update title with count
     const titles = {
         'all': 'All Events and Meetings',
         'upcoming': 'Upcoming Events and Meetings',
@@ -109,7 +109,37 @@ function filterEventsByStatus(status) {
         'cancelled': 'Cancelled Events and Meetings',
         'previous': 'Previous Events and Meetings'
     };
-    document.getElementById('eventsTitle').textContent = titles[status] || 'Events and Meetings';
+    const titleText = titles[status] || 'Events and Meetings';
+    const countText = filtered.length > 0 ? ` (${filtered.length})` : '';
+    document.getElementById('eventsTitle').textContent = titleText + countText;
+    
+    // Update filter button counts
+    updateFilterCounts();
+}
+
+// Update filter button counts
+function updateFilterCounts() {
+    const filters = ['all', 'upcoming', 'scheduled', 'missed', 'done', 'cancelled', 'previous'];
+    
+    filters.forEach(filter => {
+        const count = filterEvents(allEvents, filter).length;
+        const btn = document.querySelector(`[data-filter="${filter}"]`);
+        if (btn) {
+            // Remove existing count badge if present
+            const existingBadge = btn.querySelector('.badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+            
+            // Add count badge if count > 0
+            if (count > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-light text-dark ms-1';
+                badge.textContent = count;
+                btn.appendChild(badge);
+            }
+        }
+    });
 }
 
 // Filter events based on status
@@ -123,21 +153,39 @@ function filterEvents(events, status) {
         const eventStatus = (event.status || '').toUpperCase();
         const hasAttendance = (event._count?.attendance || 0) > 0;
         
+        // Determine actual event state
+        const isPast = eventDate < now;
+        const isFuture = eventDate > now;
+        const isCancelled = eventStatus === 'CANCELLED';
+        const isCompleted = eventStatus === 'COMPLETED';
+        const isActive = eventStatus === 'ACTIVE';
+        const isUpcoming = eventStatus === 'UPCOMING';
+        
         switch(status) {
             case 'upcoming':
-                return eventDate > now && eventStatus !== 'COMPLETED' && eventStatus !== 'CANCELLED';
+                // Future events that are not cancelled or completed
+                return isFuture && !isCancelled && !isCompleted;
+                
             case 'scheduled':
-                return eventStatus === 'UPCOMING' || eventStatus === 'ACTIVE' || (eventDate > now && !eventStatus);
+                // Events explicitly marked as UPCOMING or ACTIVE
+                return (isUpcoming || isActive) && !isCancelled;
+                
             case 'missed':
-                // Events that passed but have no attendance
-                return eventDate < now && !hasAttendance && eventStatus !== 'COMPLETED' && eventStatus !== 'CANCELLED';
+                // Past events with no attendance, not marked as completed or cancelled
+                return isPast && !hasAttendance && !isCompleted && !isCancelled;
+                
             case 'done':
-                return eventStatus === 'COMPLETED' || (eventDate < now && hasAttendance);
+                // Events marked as completed OR past events with attendance
+                return isCompleted || (isPast && hasAttendance && !isCancelled);
+                
             case 'cancelled':
-                return eventStatus === 'CANCELLED';
+                // Events marked as cancelled
+                return isCancelled;
+                
             case 'previous':
-                // All past events regardless of status
-                return eventDate < now;
+                // All past events (completed, missed, or with attendance)
+                return isPast;
+                
             default:
                 return true;
         }
@@ -174,6 +222,7 @@ async function loadEvents() {
             const filtered = filterEvents(allEvents, currentFilter);
             console.log('List.js: Filtered events count:', filtered.length);
             displayEvents(filtered);
+            updateFilterCounts();
         } else if (data.success && data.data) {
             allEvents = [];
             console.log('List.js: No events found, showing empty state');
@@ -223,26 +272,51 @@ function displayEvents(events) {
         return;
     }
     
+    // Sort events by date
+    const sortedEvents = [...events].sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        const now = new Date();
+        
+        // For upcoming/future events, sort ascending (nearest first)
+        if (dateA > now && dateB > now) {
+            return dateA - dateB;
+        }
+        // For past events, sort descending (most recent first)
+        if (dateA < now && dateB < now) {
+            return dateB - dateA;
+        }
+        // Mix of past and future, future events come first
+        return dateB - dateA;
+    });
+    
     try {
-        container.innerHTML = events.map(event => {
+        container.innerHTML = sortedEvents.map(event => {
         const eventDate = new Date(event.date);
         const now = new Date();
         const eventStatus = (event.status || '').toUpperCase();
         
-        // Determine status badge
+        // Determine status badge with improved logic
         const hasAttendance = (event._count?.attendance || 0) > 0;
+        const isPast = eventDate < now;
+        const isFuture = eventDate > now;
         let statusBadge = '';
         
+        // Priority order for status determination
         if (eventStatus === 'CANCELLED') {
             statusBadge = '<span class="badge bg-danger badge-status">Cancelled</span>';
-        } else if (eventStatus === 'COMPLETED' || (eventDate < now && hasAttendance)) {
-            statusBadge = '<span class="badge bg-secondary badge-status">Done</span>';
-        } else if (eventDate < now && !hasAttendance && eventStatus !== 'COMPLETED') {
+        } else if (eventStatus === 'COMPLETED') {
+            statusBadge = '<span class="badge bg-secondary badge-status">Completed</span>';
+        } else if (isPast && hasAttendance && eventStatus !== 'COMPLETED') {
+            statusBadge = '<span class="badge bg-success badge-status">Done</span>';
+        } else if (isPast && !hasAttendance) {
             statusBadge = '<span class="badge bg-warning badge-status">Missed</span>';
         } else if (eventStatus === 'ACTIVE') {
             statusBadge = '<span class="badge bg-primary badge-status">Active</span>';
-        } else if (eventStatus === 'UPCOMING' || eventDate > now) {
-            statusBadge = '<span class="badge bg-success badge-status">Upcoming</span>';
+        } else if (eventStatus === 'UPCOMING' || isFuture) {
+            statusBadge = '<span class="badge bg-info badge-status">Upcoming</span>';
+        } else {
+            statusBadge = '<span class="badge bg-secondary badge-status">Scheduled</span>';
         }
         
         const attendanceCount = event._count?.attendance || 0;
