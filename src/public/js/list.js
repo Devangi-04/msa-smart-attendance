@@ -163,12 +163,16 @@ function filterEvents(events, status) {
         
         switch(status) {
             case 'upcoming':
-                // Future events that are not cancelled or completed
+                // All future events that are not cancelled or completed
                 return isFuture && !isCancelled && !isCompleted;
                 
             case 'scheduled':
-                // Events explicitly marked as UPCOMING or ACTIVE
-                return (isUpcoming || isActive) && !isCancelled;
+                // Only events marked as UPCOMING or ACTIVE that haven't happened yet
+                // Must be future events OR current events without attendance
+                // Exclude: past events, completed events, events with attendance
+                if (isCancelled || isCompleted) return false;
+                if (isPast) return false;
+                return (isUpcoming || isActive);
                 
             case 'missed':
                 // Past events with no attendance, not marked as completed or cancelled
