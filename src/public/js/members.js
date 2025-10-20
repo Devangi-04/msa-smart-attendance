@@ -49,7 +49,7 @@ async function initializeMembers() {
         console.error('Members.js: Initialization error:', error);
         const tbody = document.getElementById('membersTableBody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Initialization error: ' + error.message + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger">Initialization error: ' + error.message + '</td></tr>';
         }
     }
 }
@@ -124,7 +124,7 @@ async function loadMembers() {
         }
     } catch (error) {
         console.error('Members.js: Error loading members:', error);
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading members: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger">Error loading members: ' + error.message + '</td></tr>';
     }
 }
 
@@ -153,7 +153,7 @@ function displayMembers(members) {
     
     if (!members || members.length === 0) {
         console.log('Members.js: No members to display');
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No members found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No members found</td></tr>';
         return;
     }
     
@@ -166,9 +166,9 @@ function displayMembers(members) {
         const joinedDate = new Date(member.createdAt).toLocaleDateString('en-IN');
         
         return `
-            <tr onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">
+            <tr>
                 <td>${index + 1}</td>
-                <td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">
                     <div class="d-flex align-items-center">
                         <div class="member-avatar me-2">${initials}</div>
                         <div>
@@ -176,14 +176,24 @@ function displayMembers(members) {
                         </div>
                     </div>
                 </td>
-                <td>${member.mesId || 'N/A'}</td>
-                <td>${member.rollNo || 'N/A'}</td>
-                <td><small>${yearDeptDiv}</small></td>
-                <td><span class="badge bg-secondary">${member.msaTeam || 'N/A'}</span></td>
-                <td>${member.gender || 'N/A'}</td>
-                <td>${member.phone || 'N/A'}</td>
-                <td><span class="badge ${roleClass} badge-role">${member.role}</span></td>
-                <td><small>${joinedDate}</small></td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">${member.mesId || 'N/A'}</td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">${member.rollNo || 'N/A'}</td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;"><small>${yearDeptDiv}</small></td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;"><span class="badge bg-secondary">${member.msaTeam || 'N/A'}</span></td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">${member.gender || 'N/A'}</td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;">${member.phone || 'N/A'}</td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;"><span class="badge ${roleClass} badge-role">${member.role}</span></td>
+                <td onclick="viewMemberDetails(${member.id})" style="cursor: pointer;"><small>${joinedDate}</small></td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-warning" onclick="editMember(${member.id})" title="Edit Member">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteMember(${member.id})" title="Delete Member">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -353,8 +363,160 @@ async function exportMembers() {
     }
 }
 
+// Edit member
+function editMember(memberId) {
+    console.log('Members.js: Editing member:', memberId);
+    const member = allMembers.find(m => m.id === memberId);
+    
+    if (!member) {
+        alert('Member not found');
+        return;
+    }
+    
+    // Populate form fields
+    document.getElementById('editMemberId').value = member.id;
+    document.getElementById('editName').value = member.name || '';
+    document.getElementById('editEmail').value = member.email || '';
+    document.getElementById('editRole').value = member.role || 'USER';
+    document.getElementById('editPhone').value = member.phone || '';
+    document.getElementById('editRollNo').value = member.rollNo || '';
+    document.getElementById('editMesId').value = member.mesId || '';
+    document.getElementById('editAdmissionNumber').value = member.admissionNumber || '';
+    document.getElementById('editYear').value = member.year || '';
+    document.getElementById('editDivision').value = member.division || '';
+    document.getElementById('editDepartment').value = member.department || '';
+    document.getElementById('editMsaTeam').value = member.msaTeam || '';
+    document.getElementById('editGender').value = member.gender || '';
+    
+    // Format date for input field
+    if (member.dateOfBirth) {
+        const dob = new Date(member.dateOfBirth);
+        const formattedDate = dob.toISOString().split('T')[0];
+        document.getElementById('editDateOfBirth').value = formattedDate;
+    } else {
+        document.getElementById('editDateOfBirth').value = '';
+    }
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+    modal.show();
+}
+
+// Save edited member
+async function saveEditMember() {
+    const memberId = document.getElementById('editMemberId').value;
+    const name = document.getElementById('editName').value.trim();
+    
+    if (!name) {
+        alert('Name is required');
+        return;
+    }
+    
+    const updateData = {
+        name: name,
+        role: document.getElementById('editRole').value,
+        phone: document.getElementById('editPhone').value.trim() || null,
+        rollNo: document.getElementById('editRollNo').value.trim() || null,
+        mesId: document.getElementById('editMesId').value.trim() || null,
+        admissionNumber: document.getElementById('editAdmissionNumber').value.trim() || null,
+        year: document.getElementById('editYear').value || null,
+        division: document.getElementById('editDivision').value.trim() || null,
+        department: document.getElementById('editDepartment').value || null,
+        msaTeam: document.getElementById('editMsaTeam').value || null,
+        gender: document.getElementById('editGender').value || null,
+        dateOfBirth: document.getElementById('editDateOfBirth').value || null
+    };
+    
+    try {
+        const token = safeGetToken();
+        const response = await fetch(`${API_BASE_URL}/users/${memberId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Failed to update member');
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editMemberModal'));
+        modal.hide();
+        
+        // Reload members
+        await loadMembers();
+        
+        alert('Member updated successfully!');
+    } catch (error) {
+        console.error('Error updating member:', error);
+        alert('Error updating member: ' + error.message);
+    }
+}
+
+// Delete member
+function deleteMember(memberId) {
+    console.log('Members.js: Deleting member:', memberId);
+    const member = allMembers.find(m => m.id === memberId);
+    
+    if (!member) {
+        alert('Member not found');
+        return;
+    }
+    
+    // Populate delete confirmation modal
+    document.getElementById('deleteMemberId').value = member.id;
+    document.getElementById('deleteMemberName').textContent = member.name || 'N/A';
+    document.getElementById('deleteMemberEmail').textContent = member.email;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteMemberModal'));
+    modal.show();
+}
+
+// Confirm delete member
+async function confirmDeleteMember() {
+    const memberId = document.getElementById('deleteMemberId').value;
+    
+    try {
+        const token = safeGetToken();
+        const response = await fetch(`${API_BASE_URL}/users/${memberId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Failed to delete member');
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteMemberModal'));
+        modal.hide();
+        
+        // Reload members
+        await loadMembers();
+        
+        alert('Member deleted successfully!');
+    } catch (error) {
+        console.error('Error deleting member:', error);
+        alert('Error deleting member: ' + error.message);
+    }
+}
+
 // Make functions globally available
 window.viewMemberDetails = viewMemberDetails;
+window.editMember = editMember;
+window.saveEditMember = saveEditMember;
+window.deleteMember = deleteMember;
+window.confirmDeleteMember = confirmDeleteMember;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeMembers);
