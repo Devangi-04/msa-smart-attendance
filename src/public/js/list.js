@@ -75,6 +75,12 @@ function setupEventListeners() {
     if (saveEventBtn) {
         saveEventBtn.addEventListener('click', saveEvent);
     }
+    
+    // Get Current Location button
+    const getCurrentLocationBtn = document.getElementById('getCurrentLocation');
+    if (getCurrentLocationBtn) {
+        getCurrentLocationBtn.addEventListener('click', getCurrentLocation);
+    }
 }
 
 // Filter events by status
@@ -295,6 +301,45 @@ function displayEvents(events) {
     }
 }
 
+// Get current GPS location
+function getCurrentLocation() {
+    const btn = document.getElementById('getCurrentLocation');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Getting Location...';
+    btn.disabled = true;
+    
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Location Set';
+            btn.disabled = false;
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        },
+        (error) => {
+            console.error('Error getting location:', error);
+            alert('Error getting location: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
 // Open event modal (add or edit)
 function openEventModal(event = null) {
     const modal = new bootstrap.Modal(document.getElementById('eventModal'));
@@ -304,18 +349,24 @@ function openEventModal(event = null) {
     form.reset();
     
     if (event) {
-        title.textContent = 'Edit Event/Meeting';
+        title.textContent = 'Edit Event';
         document.getElementById('eventId').value = event.id;
+        document.getElementById('isEditMode').value = 'true';
         document.getElementById('eventName').value = event.name;
         document.getElementById('eventDate').value = new Date(event.date).toISOString().slice(0, 16);
         document.getElementById('eventLocation').value = event.venue || event.location || '';
         document.getElementById('eventStatus').value = event.status || 'UPCOMING';
         document.getElementById('eventDescription').value = event.description || '';
         document.getElementById('eventCapacity').value = event.capacity || '';
+        document.getElementById('eventRadius').value = event.radius || 100;
+        document.getElementById('latitude').value = event.latitude || '';
+        document.getElementById('longitude').value = event.longitude || '';
     } else {
-        title.textContent = 'Add Event/Meeting';
+        title.textContent = 'Create New Event';
         document.getElementById('eventId').value = '';
+        document.getElementById('isEditMode').value = '';
         document.getElementById('eventStatus').value = 'UPCOMING';
+        document.getElementById('eventRadius').value = 100;
     }
     
     modal.show();
@@ -339,13 +390,25 @@ async function editEvent(eventId) {
 // Save event (create or update)
 async function saveEvent() {
     const eventId = document.getElementById('eventId').value;
+    const latitude = document.getElementById('latitude').value;
+    const longitude = document.getElementById('longitude').value;
+    
+    // Validate GPS coordinates
+    if (!latitude || !longitude) {
+        alert('Please set GPS coordinates by clicking "Get Current Location"');
+        return;
+    }
+    
     const eventData = {
         name: document.getElementById('eventName').value,
         date: new Date(document.getElementById('eventDate').value).toISOString(),
         venue: document.getElementById('eventLocation').value,
         status: document.getElementById('eventStatus').value,
         description: document.getElementById('eventDescription').value || undefined,
-        capacity: parseInt(document.getElementById('eventCapacity').value) || undefined
+        capacity: parseInt(document.getElementById('eventCapacity').value) || undefined,
+        radius: parseInt(document.getElementById('eventRadius').value) || 100,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
     };
     
     const token = safeGetToken();
