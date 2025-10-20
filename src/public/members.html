@@ -336,38 +336,60 @@
                                     <label for="editYear" class="form-label">Year</label>
                                     <select class="form-select" id="editYear">
                                         <option value="">Select Year</option>
-                                        <option value="FE">FE</option>
-                                        <option value="SE">SE</option>
-                                        <option value="TE">TE</option>
-                                        <option value="BE">BE</option>
+                                        <option value="FY">First Year (FY)</option>
+                                        <option value="SY">Second Year (SY)</option>
+                                        <option value="TY">Third Year (TY)</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="editDivision" class="form-label">Division</label>
-                                    <input type="text" class="form-control" id="editDivision" placeholder="e.g., A, B, C">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="editDepartment" class="form-label">Department</label>
-                                    <select class="form-select" id="editDepartment">
-                                        <option value="">Select Department</option>
-                                        <option value="Computer Engineering">Computer Engineering</option>
-                                        <option value="Information Technology">Information Technology</option>
-                                        <option value="Electronics & Telecommunication">Electronics & Telecommunication</option>
-                                        <option value="Mechanical Engineering">Mechanical Engineering</option>
-                                        <option value="Civil Engineering">Civil Engineering</option>
-                                        <option value="Electrical Engineering">Electrical Engineering</option>
+                                    <select class="form-select" id="editDivision">
+                                        <option value="">Select Division</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="editMsaTeam" class="form-label">MSA Team</label>
+                                    <label for="editDepartment" class="form-label">Department Name</label>
+                                    <input type="text" class="form-control" id="editDepartment" placeholder="e.g., Computer Science">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="editMsaTeam" class="form-label">MSA Team Position</label>
                                     <select class="form-select" id="editMsaTeam">
-                                        <option value="">Select Team</option>
-                                        <option value="Technical">Technical</option>
-                                        <option value="Media">Media</option>
-                                        <option value="Sports">Sports</option>
-                                        <option value="Cultural">Cultural</option>
-                                        <option value="Social">Social</option>
-                                        <option value="Finance">Finance</option>
+                                        <option value="">Select Position</option>
+                                        <optgroup label="Leadership Positions">
+                                            <option value="Organizing Head">Organizing Head</option>
+                                            <option value="Organizing Co-Head">Organizing Co-Head</option>
+                                            <option value="Content Head">Content Head</option>
+                                            <option value="Content Co-Head">Content Co-Head</option>
+                                            <option value="Graphics Head">Graphics Head</option>
+                                            <option value="MIS Head">MIS Head</option>
+                                            <option value="Technical Head">Technical Head</option>
+                                            <option value="Treasurer">Treasurer</option>
+                                            <option value="Marketing Head">Marketing Head</option>
+                                            <option value="Marketing Co-Head">Marketing Co-Head</option>
+                                            <option value="Creatives Head">Creatives Head</option>
+                                            <option value="Social Media Head">Social Media Head</option>
+                                            <option value="Logistic Head">Logistic Head</option>
+                                            <option value="Video Editor & Coverage Head">Video Editor & Coverage Head</option>
+                                        </optgroup>
+                                        <optgroup label="Team Members">
+                                            <option value="Organizing Member">Organizing Member</option>
+                                            <option value="Content Member">Content Member</option>
+                                            <option value="Graphics Member">Graphics Member</option>
+                                            <option value="MIS Member">MIS Member</option>
+                                            <option value="Technical Member">Technical Member</option>
+                                            <option value="Marketing Member">Marketing Member</option>
+                                            <option value="Creatives Member">Creatives Member</option>
+                                            <option value="Social Media Member">Social Media Member</option>
+                                            <option value="Logistic Member">Logistic Member</option>
+                                            <option value="Video Editor & Coverage Member">Video Editor & Coverage Member</option>
+                                        </optgroup>
+                                        <optgroup label="General">
+                                            <option value="Member">General Member</option>
+                                        </optgroup>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
