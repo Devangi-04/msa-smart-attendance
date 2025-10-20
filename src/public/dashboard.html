@@ -45,6 +45,44 @@
         .event-card:hover {
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .stat-card {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .stat-card i {
+                font-size: 2.5rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .stat-card h6 {
+                font-size: 0.9rem;
+            }
+            
+            .event-card {
+                margin-bottom: 15px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card i {
+                font-size: 2rem;
+            }
+            
+            .stat-number {
+                font-size: 1.75rem;
+            }
+        }
     </style>
 </head>
 <body>
