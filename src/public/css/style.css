@@ -256,6 +256,29 @@ body {
         color: white !important;
     }
 
+    /* Event details modal mobile styling */
+    #eventDetailsModal .event-name-text {
+        word-break: break-word;
+        flex: 1 1 auto;
+    }
+
+    #eventDetailsModal .detail-item {
+        padding: 8px 0;
+    }
+
+    #eventDetailsModal .card {
+        margin-bottom: 12px;
+    }
+
+    #eventDetailsModal .card-body {
+        padding: 12px;
+    }
+
+    #eventDetailsModal .d-grid button {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+
     /* Badge adjustments */
     .badge {
         font-size: 0.75rem;
@@ -430,6 +453,45 @@ body {
     .modal-header,
     .modal-footer {
         background-color: #ffffff;
+    }
+
+    /* Event details modal on small screens */
+    #eventDetailsModal .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100vh;
+    }
+
+    #eventDetailsModal .modal-content {
+        height: 100%;
+        border-radius: 0;
+    }
+
+    #eventDetailsModal .modal-body {
+        padding: 12px;
+        overflow-y: auto;
+    }
+
+    #eventDetailsModal h4 {
+        font-size: 1.1rem;
+    }
+
+    #eventDetailsModal .card-header {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    #eventDetailsModal .d-grid button {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+
+    #eventDetailsModal .detail-item p {
+        font-size: 0.9rem;
+    }
+
+    #eventDetailsModal .badge {
+        font-size: 0.7rem;
     }
 
     /* Stats cards */

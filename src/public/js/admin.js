@@ -660,73 +660,107 @@ async function showEventDetailsModal(eventId) {
         // Create modal content
         const modalContent = `
             <div class="modal fade" id="eventDetailsModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Event Details</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <h4 class="mb-3">${event.name} ${statusBadge}</h4>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p><strong><i class="fas fa-calendar me-2"></i>Date & Time:</strong><br>
-                                    ${eventDate.toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                        <div class="modal-body" style="background-color: #f8f9fa;">
+                            <div class="event-details-content">
+                                <h4 class="mb-3 d-flex flex-wrap align-items-center gap-2">
+                                    <span class="event-name-text">${event.name}</span>
+                                    ${statusBadge}
+                                </h4>
+                                
+                                <div class="card mb-3 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <div class="detail-item">
+                                                    <p class="mb-1"><strong><i class="fas fa-calendar me-2 text-primary"></i>Date & Time:</strong></p>
+                                                    <p class="mb-0 ms-4">${eventDate.toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="detail-item">
+                                                    <p class="mb-1"><strong><i class="fas fa-map-marker-alt me-2 text-danger"></i>Venue:</strong></p>
+                                                    <p class="mb-0 ms-4">${event.venue || 'Not specified'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <p><strong><i class="fas fa-map-marker-alt me-2"></i>Venue:</strong><br>
-                                    ${event.venue || 'Not specified'}</p>
+                                
+                                ${event.description ? `
+                                    <div class="card mb-3 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong><i class="fas fa-align-left me-2 text-info"></i>Description:</strong></p>
+                                            <p class="mb-0 ms-4">${event.description}</p>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="card mb-3 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <div class="detail-item">
+                                                    <p class="mb-1"><strong><i class="fas fa-users me-2 text-success"></i>Attendance:</strong></p>
+                                                    <p class="mb-0 ms-4">
+                                                        <span class="badge bg-success fs-6">${attendanceCount}${event.capacity ? ` / ${event.capacity}` : ''}</span>
+                                                        <span class="ms-2">attendees</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="detail-item">
+                                                    <p class="mb-1"><strong><i class="fas fa-map-pin me-2 text-warning"></i>GPS Radius:</strong></p>
+                                                    <p class="mb-0 ms-4">${event.radius || 100} meters</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            ${event.description ? `
-                                <div class="mb-3">
-                                    <p><strong><i class="fas fa-align-left me-2"></i>Description:</strong><br>
-                                    ${event.description}</p>
-                                </div>
-                            ` : ''}
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p><strong><i class="fas fa-users me-2"></i>Attendance:</strong><br>
-                                    ${attendanceCount}${event.capacity ? ` / ${event.capacity}` : ''} attendees</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong><i class="fas fa-map-pin me-2"></i>GPS Radius:</strong><br>
-                                    ${event.radius || 100} meters</p>
-                                </div>
-                            </div>
-                            
-                            ${event.latitude && event.longitude ? `
-                                <div class="mb-3">
-                                    <p><strong><i class="fas fa-location-arrow me-2"></i>GPS Coordinates:</strong><br>
-                                    Lat: ${event.latitude}, Long: ${event.longitude}</p>
-                                </div>
-                            ` : ''}
-                            
-                            <div class="alert alert-info">
-                                <strong><i class="fas fa-info-circle me-2"></i>Quick Actions:</strong>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-primary me-2" onclick="showEventQR(${event.id})">
-                                        <i class="fas fa-qrcode me-1"></i>Show QR Code
-                                    </button>
-                                    <button class="btn btn-sm btn-info me-2" onclick="viewEventAttendance(${event.id})">
-                                        <i class="fas fa-users me-1"></i>View Attendance
-                                    </button>
-                                    <button class="btn btn-sm btn-warning me-2" onclick="editEvent(${event.id})">
-                                        <i class="fas fa-edit me-1"></i>Edit Event
-                                    </button>
-                                    ${attendanceCount > 0 ? `
-                                        <button class="btn btn-sm btn-success" onclick="currentEventId=${event.id}; exportAttendance()">
-                                            <i class="fas fa-file-excel me-1"></i>Export Excel
-                                        </button>
-                                    ` : ''}
+                                
+                                ${event.latitude && event.longitude ? `
+                                    <div class="card mb-3 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <p class="mb-1"><strong><i class="fas fa-location-arrow me-2 text-secondary"></i>GPS Coordinates:</strong></p>
+                                            <p class="mb-0 ms-4"><small>Lat: ${event.latitude}, Long: ${event.longitude}</small></p>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <strong><i class="fas fa-bolt me-2"></i>Quick Actions</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" onclick="closeEventDetailsAndShowQR(${event.id})">
+                                                <i class="fas fa-qrcode me-2"></i>Show QR Code
+                                            </button>
+                                            <button class="btn btn-info" onclick="closeEventDetailsAndShowAttendance(${event.id})">
+                                                <i class="fas fa-users me-2"></i>View Attendance
+                                            </button>
+                                            <button class="btn btn-warning" onclick="bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal')).hide(); editEvent(${event.id})">
+                                                <i class="fas fa-edit me-2"></i>Edit Event
+                                            </button>
+                                            ${attendanceCount > 0 ? `
+                                                <button class="btn btn-success" onclick="currentEventId=${event.id}; exportAttendance()">
+                                                    <i class="fas fa-file-excel me-2"></i>Export to Excel
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <div class="modal-footer bg-white">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Close
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -757,6 +791,34 @@ async function showEventDetailsModal(eventId) {
     }
 }
 
+// Helper function to close event details and show QR
+function closeEventDetailsAndShowQR(eventId) {
+    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal'));
+    if (detailsModal) {
+        detailsModal.hide();
+        // Wait for modal to close before showing QR
+        setTimeout(() => {
+            showEventQR(eventId);
+        }, 300);
+    } else {
+        showEventQR(eventId);
+    }
+}
+
+// Helper function to close event details and show attendance
+function closeEventDetailsAndShowAttendance(eventId) {
+    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal'));
+    if (detailsModal) {
+        detailsModal.hide();
+        // Wait for modal to close before showing attendance
+        setTimeout(() => {
+            viewEventAttendance(eventId);
+        }, 300);
+    } else {
+        viewEventAttendance(eventId);
+    }
+}
+
 // View event details - shows attendance modal for specific event, then details on close
 async function viewEventDetails(eventId) {
     console.log('Admin.js: viewEventDetails called for eventId:', eventId);
@@ -781,6 +843,8 @@ window.showEventQR = showEventQR;
 window.viewEventAttendance = viewEventAttendance;
 window.viewEventDetails = viewEventDetails;
 window.showEventDetailsModal = showEventDetailsModal;
+window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
+window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);
