@@ -471,12 +471,23 @@ async function showEventQR(eventId) {
 }
 
 // View attendance for an event
-async function viewEventAttendance(eventId) {
-    const modal = new bootstrap.Modal(document.getElementById('attendanceModal'));
+async function viewEventAttendance(eventId, showDetailsOnClose = false) {
+    const modalElement = document.getElementById('attendanceModal');
+    const modal = new bootstrap.Modal(modalElement);
     const content = document.getElementById('attendanceContent');
     
     currentEventId = eventId;
     content.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // If showDetailsOnClose is true, add event listener to show details when modal closes
+    if (showDetailsOnClose) {
+        const handleModalHidden = () => {
+            showEventDetailsModal(eventId);
+            modalElement.removeEventListener('hidden.bs.modal', handleModalHidden);
+        };
+        modalElement.addEventListener('hidden.bs.modal', handleModalHidden);
+    }
+    
     modal.show();
     
     try {
@@ -609,7 +620,144 @@ function downloadQRCode() {
     link.click();
 }
 
-// View event details - shows attendance modal for specific event
+// Show event details modal
+async function showEventDetailsModal(eventId) {
+    console.log('Admin.js: showEventDetailsModal called for eventId:', eventId);
+    
+    try {
+        // Fetch fresh event data
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+        const result = await response.json();
+        
+        if (!result.success || !result.data) {
+            alert('Error loading event details');
+            return;
+        }
+        
+        const event = result.data;
+        const eventDate = new Date(event.date);
+        const now = new Date();
+        const attendanceCount = event._count?.attendance || 0;
+        
+        // Determine status
+        let statusBadge = '';
+        const status = event.status || 'UPCOMING';
+        switch(status) {
+            case 'UPCOMING':
+                statusBadge = '<span class="badge bg-success">Upcoming</span>';
+                break;
+            case 'ACTIVE':
+                statusBadge = '<span class="badge bg-primary">Active</span>';
+                break;
+            case 'COMPLETED':
+                statusBadge = '<span class="badge bg-secondary">Completed</span>';
+                break;
+            case 'CANCELLED':
+                statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+                break;
+        }
+        
+        // Create modal content
+        const modalContent = `
+            <div class="modal fade" id="eventDetailsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Event Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h4 class="mb-3">${event.name} ${statusBadge}</h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-calendar me-2"></i>Date & Time:</strong><br>
+                                    ${eventDate.toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' })}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-map-marker-alt me-2"></i>Venue:</strong><br>
+                                    ${event.venue || 'Not specified'}</p>
+                                </div>
+                            </div>
+                            
+                            ${event.description ? `
+                                <div class="mb-3">
+                                    <p><strong><i class="fas fa-align-left me-2"></i>Description:</strong><br>
+                                    ${event.description}</p>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-users me-2"></i>Attendance:</strong><br>
+                                    ${attendanceCount}${event.capacity ? ` / ${event.capacity}` : ''} attendees</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-map-pin me-2"></i>GPS Radius:</strong><br>
+                                    ${event.radius || 100} meters</p>
+                                </div>
+                            </div>
+                            
+                            ${event.latitude && event.longitude ? `
+                                <div class="mb-3">
+                                    <p><strong><i class="fas fa-location-arrow me-2"></i>GPS Coordinates:</strong><br>
+                                    Lat: ${event.latitude}, Long: ${event.longitude}</p>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-info-circle me-2"></i>Quick Actions:</strong>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-primary me-2" onclick="showEventQR(${event.id})">
+                                        <i class="fas fa-qrcode me-1"></i>Show QR Code
+                                    </button>
+                                    <button class="btn btn-sm btn-info me-2" onclick="viewEventAttendance(${event.id})">
+                                        <i class="fas fa-users me-1"></i>View Attendance
+                                    </button>
+                                    <button class="btn btn-sm btn-warning me-2" onclick="editEvent(${event.id})">
+                                        <i class="fas fa-edit me-1"></i>Edit Event
+                                    </button>
+                                    ${attendanceCount > 0 ? `
+                                        <button class="btn btn-sm btn-success" onclick="currentEventId=${event.id}; exportAttendance()">
+                                            <i class="fas fa-file-excel me-1"></i>Export Excel
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if present
+        const existingModal = document.getElementById('eventDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+        modal.show();
+        
+        // Clean up modal after it's hidden
+        document.getElementById('eventDetailsModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Admin.js: Error showing event details:', error);
+        alert('Error loading event details: ' + error.message);
+    }
+}
+
+// View event details - shows attendance modal for specific event, then details on close
 async function viewEventDetails(eventId) {
     console.log('Admin.js: viewEventDetails called for eventId:', eventId);
     
@@ -622,8 +770,8 @@ async function viewEventDetails(eventId) {
         return;
     }
     
-    // Open the attendance modal for this event
-    await viewEventAttendance(eventId);
+    // Open the attendance modal for this event, and show details when it closes
+    await viewEventAttendance(eventId, true);
 }
 
 // Make functions globally available
@@ -632,6 +780,7 @@ window.deleteEvent = deleteEvent;
 window.showEventQR = showEventQR;
 window.viewEventAttendance = viewEventAttendance;
 window.viewEventDetails = viewEventDetails;
+window.showEventDetailsModal = showEventDetailsModal;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);
