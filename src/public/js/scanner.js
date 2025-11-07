@@ -64,8 +64,10 @@ async function processQRCode(qrData) {
         const attendanceData = {
             eventId: qrInfo.eventId,
             qrToken: qrInfo.token,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            location: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            },
             lecturesMissed: lecturesMissed
         };
 
