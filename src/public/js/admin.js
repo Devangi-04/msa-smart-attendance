@@ -556,6 +556,7 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                                 <th>Email</th>
                                 <th>Marked At</th>
                                 <th>Lectures Missed</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -565,13 +566,36 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                 const user = record.user || {};
                 const markedAt = new Date(record.markedAt || record.reportingTime).toLocaleString();
                 html += `
-                    <tr>
+                    <tr id="attendance-row-${record.id}">
                         <td>${index + 1}</td>
                         <td>${user.name || 'N/A'}</td>
                         <td>${user.rollNo || 'N/A'}</td>
                         <td>${user.email || 'N/A'}</td>
                         <td>${markedAt}</td>
-                        <td>${record.lecturesMissed || 0}</td>
+                        <td>
+                            <span id="lectures-display-${record.id}">${record.lecturesMissed || 0}</span>
+                            <div id="lectures-edit-${record.id}" style="display: none;">
+                                <select class="form-select form-select-sm" id="lectures-select-${record.id}">
+                                    <option value="0" ${(record.lecturesMissed || 0) === 0 ? 'selected' : ''}>0</option>
+                                    <option value="1" ${record.lecturesMissed === 1 ? 'selected' : ''}>1</option>
+                                    <option value="2" ${record.lecturesMissed === 2 ? 'selected' : ''}>2</option>
+                                    <option value="3" ${record.lecturesMissed === 3 ? 'selected' : ''}>3</option>
+                                    <option value="4" ${record.lecturesMissed === 4 ? 'selected' : ''}>4</option>
+                                    <option value="5" ${record.lecturesMissed === 5 ? 'selected' : ''}>5</option>
+                                </select>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-success" id="save-btn-${record.id}" style="display: none;" onclick="saveLecturesMissed(${record.id})">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button class="btn btn-sm btn-secondary" id="cancel-btn-${record.id}" style="display: none;" onclick="cancelEditLecturesMissed(${record.id}, ${record.lecturesMissed || 0})">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -940,6 +964,85 @@ async function downloadMonthlyReport() {
     }
 }
 
+// Edit lectures missed
+function editLecturesMissed(attendanceId) {
+    console.log('Editing lectures missed for attendance:', attendanceId);
+    
+    // Hide display, show edit controls
+    document.getElementById(`lectures-display-${attendanceId}`).style.display = 'none';
+    document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'block';
+    
+    // Toggle buttons
+    document.getElementById(`edit-btn-${attendanceId}`).style.display = 'none';
+    document.getElementById(`save-btn-${attendanceId}`).style.display = 'inline-block';
+    document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'inline-block';
+}
+
+// Save lectures missed
+async function saveLecturesMissed(attendanceId) {
+    const selectElement = document.getElementById(`lectures-select-${attendanceId}`);
+    const newValue = parseInt(selectElement.value);
+    
+    console.log('Saving lectures missed:', attendanceId, newValue);
+    
+    const token = safeGetToken();
+    if (!token) {
+        alert('Please login to update attendance');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/attendance/${attendanceId}/lectures`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ lecturesMissed: newValue })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update display
+            document.getElementById(`lectures-display-${attendanceId}`).textContent = newValue;
+            
+            // Hide edit, show display
+            document.getElementById(`lectures-display-${attendanceId}`).style.display = 'inline';
+            document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'none';
+            
+            // Toggle buttons
+            document.getElementById(`edit-btn-${attendanceId}`).style.display = 'inline-block';
+            document.getElementById(`save-btn-${attendanceId}`).style.display = 'none';
+            document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'none';
+            
+            alert('Lectures missed updated successfully!');
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error updating lectures missed:', error);
+        alert('Error updating lectures missed. Please try again.');
+    }
+}
+
+// Cancel edit lectures missed
+function cancelEditLecturesMissed(attendanceId, originalValue) {
+    console.log('Canceling edit for attendance:', attendanceId);
+    
+    // Reset select to original value
+    document.getElementById(`lectures-select-${attendanceId}`).value = originalValue;
+    
+    // Hide edit, show display
+    document.getElementById(`lectures-display-${attendanceId}`).style.display = 'inline';
+    document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'none';
+    
+    // Toggle buttons
+    document.getElementById(`edit-btn-${attendanceId}`).style.display = 'inline-block';
+    document.getElementById(`save-btn-${attendanceId}`).style.display = 'none';
+    document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'none';
+}
+
 // Make functions globally available
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
@@ -950,6 +1053,9 @@ window.showEventDetailsModal = showEventDetailsModal;
 window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
 window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
 window.downloadMonthlyReport = downloadMonthlyReport;
+window.editLecturesMissed = editLecturesMissed;
+window.saveLecturesMissed = saveLecturesMissed;
+window.cancelEditLecturesMissed = cancelEditLecturesMissed;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);

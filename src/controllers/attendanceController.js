@@ -267,6 +267,49 @@ const checkAttendance = async (req, res) => {
   }
 };
 
+// Update lectures missed (admin only)
+const updateLecturesMissed = async (req, res) => {
+  try {
+    const { attendanceId } = req.params;
+    const { lecturesMissed } = req.body;
+
+    // Validate lectures missed (0-5 only)
+    const validatedLectures = parseInt(lecturesMissed);
+    if (isNaN(validatedLectures) || validatedLectures < 0 || validatedLectures > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Lectures missed must be between 0 and 5'
+      });
+    }
+
+    const updatedAttendance = await prisma.attendance.update({
+      where: { id: parseInt(attendanceId) },
+      data: { lecturesMissed: validatedLectures },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            rollNo: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Lectures missed updated successfully',
+      data: updatedAttendance
+    });
+  } catch (error) {
+    console.error('Error updating lectures missed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating lectures missed'
+    });
+  }
+};
+
 // Delete attendance record (admin only)
 const deleteAttendance = async (req, res) => {
   try {
@@ -293,5 +336,6 @@ module.exports = {
   markAttendance,
   getAttendanceList,
   checkAttendance,
+  updateLecturesMissed,
   deleteAttendance
 };

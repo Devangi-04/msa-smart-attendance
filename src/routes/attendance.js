@@ -4,6 +4,7 @@ const {
   markAttendance,
   getAttendanceList,
   checkAttendance,
+  updateLecturesMissed,
   deleteAttendance
 } = require('../controllers/attendanceController');
 const { authenticate, isAdmin } = require('../middleware/auth');
@@ -16,6 +17,7 @@ router.get('/check/:eventId', authenticate, checkAttendance);
 router.get('/list/:eventId', getAttendanceList);
 
 // Admin only routes
+router.patch('/:attendanceId/lectures', authenticate, isAdmin, updateLecturesMissed);
 router.delete('/:attendanceId', authenticate, isAdmin, deleteAttendance);
 
 module.exports = router;
