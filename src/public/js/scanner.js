@@ -25,9 +25,35 @@ function initializeScanner() {
     html5QrcodeScanner.render(onScanSuccess, onScanError);
 }
 
+// Helper function to get token
+function getToken() {
+    return localStorage.getItem('token') || sessionStorage.getItem('token');
+}
+
+// Helper function to get user
+function getUser() {
+    const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+}
+
 // Process the scanned QR code
 async function processQRCode(qrData) {
     try {
+        // Check authentication
+        const token = getToken();
+        const user = getUser();
+        
+        if (!token || !user) {
+            showError('Authentication required. Please login first.');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
+        
+        // Get lectures missed value
+        const lecturesMissed = parseInt(document.getElementById('lecturesMissed').value) || 0;
+        
         // Get current position
         const position = await getCurrentPosition();
         
@@ -38,18 +64,17 @@ async function processQRCode(qrData) {
         const attendanceData = {
             eventId: qrInfo.eventId,
             qrToken: qrInfo.token,
-            location: {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-            },
-            userId: 'USER_ID' // TODO: Replace with actual user ID
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            lecturesMissed: lecturesMissed
         };
 
         // Send attendance data to server
-        const response = await fetch('/api/attendance/mark', {
+        const response = await fetch(`${API_BASE_URL || ''}/api/attendance/mark`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(attendanceData)
         });
@@ -58,9 +83,19 @@ async function processQRCode(qrData) {
         
         // Show result
         const resultDiv = document.getElementById('result');
-        resultDiv.classList.remove('d-none', 'alert-success', 'alert-danger');
+        resultDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-info');
         resultDiv.classList.add(result.success ? 'alert-success' : 'alert-danger');
-        resultDiv.textContent = result.message;
+        resultDiv.innerHTML = `
+            <i class="fas fa-${result.success ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${result.message}
+        `;
+        
+        // If successful, redirect to dashboard after 2 seconds
+        if (result.success) {
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 2000);
+        }
 
     } catch (error) {
         console.error('Error processing QR code:', error);
