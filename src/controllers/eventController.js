@@ -641,7 +641,7 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
-// Export monthly attendance report
+// Export monthly attendance report - User-wise attendance totals
 const exportMonthlyReport = async (req, res) => {
   try {
     const { year, month } = req.query;
@@ -684,184 +684,152 @@ const exportMonthlyReport = async (req, res) => {
       });
     }
 
+    // Create a map of users and their attendance count
+    const userAttendanceMap = new Map();
+
+    events.forEach(event => {
+      event.attendance.forEach(att => {
+        const userId = att.user.id;
+        if (!userAttendanceMap.has(userId)) {
+          userAttendanceMap.set(userId, {
+            user: att.user,
+            count: 0,
+            events: []
+          });
+        }
+        const userData = userAttendanceMap.get(userId);
+        userData.count++;
+        userData.events.push({
+          name: event.name,
+          date: event.date
+        });
+      });
+    });
+
+    // Convert map to array and sort by name
+    const usersWithAttendance = Array.from(userAttendanceMap.values())
+      .sort((a, b) => a.user.name.localeCompare(b.user.name));
+
+    // Segregate by year
+    const fyUsers = usersWithAttendance.filter(u => u.user.year === 'FY');
+    const syUsers = usersWithAttendance.filter(u => u.user.year === 'SY');
+    const tyUsers = usersWithAttendance.filter(u => u.user.year === 'TY');
+    const otherUsers = usersWithAttendance.filter(u => !['FY', 'SY', 'TY'].includes(u.user.year));
+
     // Create Excel workbook
     const workbook = new ExcelJS.Workbook();
-    const summarySheet = workbook.addWorksheet('Summary');
+    const worksheet = workbook.addWorksheet('Monthly Attendance');
 
-    // Summary sheet header
-    summarySheet.columns = [
-      { header: 'S.No', key: 'sno', width: 8 },
-      { header: 'Event Name', key: 'eventName', width: 30 },
-      { header: 'Date', key: 'date', width: 20 },
-      { header: 'Total Attendees', key: 'totalAttendees', width: 15 },
-      { header: 'FY Count', key: 'fyCount', width: 12 },
-      { header: 'SY Count', key: 'syCount', width: 12 },
-      { header: 'TY Count', key: 'tyCount', width: 12 }
+    // Set column widths
+    worksheet.columns = [
+      { key: 'sno', width: 8 },
+      { key: 'rollNo', width: 12 },
+      { key: 'name', width: 25 },
+      { key: 'year', width: 10 },
+      { key: 'division', width: 10 },
+      { key: 'department', width: 20 },
+      { key: 'msaTeam', width: 20 },
+      { key: 'phone', width: 15 },
+      { key: 'totalEvents', width: 15 }
     ];
 
-    // Style summary header
-    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    summarySheet.getRow(1).fill = {
+    let currentRow = 1;
+
+    // Add title
+    worksheet.getCell(`A${currentRow}`).value = `Monthly Attendance Report - ${moment(startDate).format('MMMM YYYY')}`;
+    worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+    worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
+    worksheet.getCell(`A${currentRow}`).fill = {
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'FF667EEA' }
     };
-    summarySheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    currentRow++;
 
-    let totalAttendance = 0;
-    let totalFY = 0;
-    let totalSY = 0;
-    let totalTY = 0;
+    worksheet.getCell(`A${currentRow}`).value = `Total Events: ${events.length}`;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
 
-    // Add summary data
-    events.forEach((event, index) => {
-      const fyCount = event.attendance.filter(att => att.user.year === 'FY').length;
-      const syCount = event.attendance.filter(att => att.user.year === 'SY').length;
-      const tyCount = event.attendance.filter(att => att.user.year === 'TY').length;
+    worksheet.getCell(`A${currentRow}`).value = `Total Unique Attendees: ${usersWithAttendance.length}`;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow += 2;
 
-      summarySheet.addRow({
-        sno: index + 1,
-        eventName: event.name,
-        date: moment(event.date).format('DD-MM-YYYY HH:mm'),
-        totalAttendees: event.attendance.length,
-        fyCount: fyCount,
-        syCount: syCount,
-        tyCount: tyCount
-      });
+    // Helper function to add year section
+    const addYearSection = (yearName, userData) => {
+      if (userData.length === 0) return;
 
-      totalAttendance += event.attendance.length;
-      totalFY += fyCount;
-      totalSY += syCount;
-      totalTY += tyCount;
-    });
-
-    // Add total row
-    const totalRow = summarySheet.addRow({
-      sno: '',
-      eventName: 'TOTAL',
-      date: '',
-      totalAttendees: totalAttendance,
-      fyCount: totalFY,
-      syCount: totalSY,
-      tyCount: totalTY
-    });
-    totalRow.font = { bold: true };
-    totalRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFEB3B' }
-    };
-
-    // Add borders to summary sheet
-    summarySheet.eachRow((row) => {
-      row.eachCell((cell) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-      });
-    });
-
-    // Create detailed sheets for each event
-    events.forEach((event, eventIndex) => {
-      const worksheet = workbook.addWorksheet(`Event ${eventIndex + 1}`);
-
-      // Segregate by year
-      const fyAttendance = event.attendance.filter(att => att.user.year === 'FY');
-      const syAttendance = event.attendance.filter(att => att.user.year === 'SY');
-      const tyAttendance = event.attendance.filter(att => att.user.year === 'TY');
-      const otherAttendance = event.attendance.filter(att => !['FY', 'SY', 'TY'].includes(att.user.year));
-
-      worksheet.columns = [
-        { key: 'sno', width: 8 },
-        { key: 'rollNo', width: 12 },
-        { key: 'name', width: 25 },
-        { key: 'year', width: 10 },
-        { key: 'division', width: 10 },
-        { key: 'department', width: 20 },
-        { key: 'phone', width: 15 },
-        { key: 'reportingTime', width: 20 }
-      ];
-
-      let currentRow = 1;
-
-      // Event info
-      worksheet.getCell(`A${currentRow}`).value = 'Event Name:';
-      worksheet.getCell(`B${currentRow}`).value = event.name;
-      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      // Year header
+      worksheet.getCell(`A${currentRow}`).value = yearName;
+      worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+      worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      worksheet.getCell(`A${currentRow}`).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF667EEA' }
+      };
+      worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       currentRow++;
 
-      worksheet.getCell(`A${currentRow}`).value = 'Date:';
-      worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('DD-MM-YYYY HH:mm');
-      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      // Column headers
+      const headerRow = worksheet.getRow(currentRow);
+      headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'MSA Team', 'Phone', 'Events Attended'];
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF667EEA' }
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
       currentRow++;
 
-      worksheet.getCell(`A${currentRow}`).value = 'Total Attendees:';
-      worksheet.getCell(`B${currentRow}`).value = event.attendance.length;
-      worksheet.getCell(`A${currentRow}`).font = { bold: true };
-      currentRow += 2;
+      // Data rows
+      userData.forEach((item, index) => {
+        const dataRow = worksheet.getRow(currentRow);
+        dataRow.values = [
+          index + 1,
+          item.user.rollNo || 'N/A',
+          item.user.name,
+          item.user.year || 'N/A',
+          item.user.division || 'N/A',
+          item.user.department || 'N/A',
+          item.user.msaTeam || 'N/A',
+          item.user.phone || 'N/A',
+          item.count
+        ];
 
-      // Helper to add year section
-      const addYearSection = (yearName, attendanceData) => {
-        if (attendanceData.length === 0) return;
+        // Format phone as text
+        const phoneCell = dataRow.getCell(8);
+        phoneCell.numFmt = '@';
 
-        worksheet.getCell(`A${currentRow}`).value = yearName;
-        worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
-        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-        worksheet.getCell(`A${currentRow}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF667EEA' }
-        };
-        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
-        currentRow++;
-
-        const headerRow = worksheet.getRow(currentRow);
-        headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'Phone', 'Reporting Time'];
-        headerRow.font = { bold: true };
-        headerRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFD3D3D3' }
-        };
-        currentRow++;
-
-        attendanceData.forEach((att, index) => {
-          const dataRow = worksheet.getRow(currentRow);
-          dataRow.values = [
-            index + 1,
-            att.user.rollNo || 'N/A',
-            att.user.name,
-            att.user.year || 'N/A',
-            att.user.division || 'N/A',
-            att.user.department || 'N/A',
-            att.user.phone || 'N/A',
-            moment(att.reportingTime || att.markedAt).format('DD-MM-YYYY HH:mm:ss')
-          ];
-          
-          // Format phone as text
-          const phoneCell = dataRow.getCell(7);
-          phoneCell.numFmt = '@';
-          
-          currentRow++;
+        // Add borders
+        dataRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
         });
 
-        worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
-        worksheet.getCell(`B${currentRow}`).value = attendanceData.length;
-        worksheet.getCell(`A${currentRow}`).font = { bold: true };
-        worksheet.getCell(`B${currentRow}`).font = { bold: true };
-        currentRow += 2;
-      };
+        currentRow++;
+      });
 
-      addYearSection('FY (First Year)', fyAttendance);
-      addYearSection('SY (Second Year)', syAttendance);
-      addYearSection('TY (Third Year)', tyAttendance);
-      if (otherAttendance.length > 0) {
-        addYearSection('Others', otherAttendance);
-      }
-    });
+      // Add count row
+      worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
+      worksheet.getCell(`B${currentRow}`).value = userData.length;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      worksheet.getCell(`B${currentRow}`).font = { bold: true };
+      currentRow += 2;
+    };
+
+    // Add sections for each year
+    addYearSection('FY (First Year)', fyUsers);
+    addYearSection('SY (Second Year)', syUsers);
+    addYearSection('TY (Third Year)', tyUsers);
+    if (otherUsers.length > 0) {
+      addYearSection('Others', otherUsers);
+    }
 
     // Set response headers
     const monthName = moment(startDate).format('MMMM-YYYY');
