@@ -694,14 +694,17 @@ const exportMonthlyReport = async (req, res) => {
           userAttendanceMap.set(userId, {
             user: att.user,
             count: 0,
+            totalLecturesMissed: 0,
             events: []
           });
         }
         const userData = userAttendanceMap.get(userId);
         userData.count++;
+        userData.totalLecturesMissed += (att.lecturesMissed || 0);
         userData.events.push({
           name: event.name,
-          date: event.date
+          date: event.date,
+          lecturesMissed: att.lecturesMissed || 0
         });
       });
     });
@@ -730,14 +733,15 @@ const exportMonthlyReport = async (req, res) => {
       { key: 'department', width: 20 },
       { key: 'msaTeam', width: 20 },
       { key: 'phone', width: 15 },
-      { key: 'totalEvents', width: 15 }
+      { key: 'totalEvents', width: 15 },
+      { key: 'totalLectures', width: 18 }
     ];
 
     let currentRow = 1;
 
     // Add title
     worksheet.getCell(`A${currentRow}`).value = `Monthly Attendance Report - ${moment(startDate).format('MMMM YYYY')}`;
-    worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+    worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
     worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
     worksheet.getCell(`A${currentRow}`).fill = {
       type: 'pattern',
@@ -761,7 +765,7 @@ const exportMonthlyReport = async (req, res) => {
 
       // Year header
       worksheet.getCell(`A${currentRow}`).value = yearName;
-      worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+      worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
       worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
       worksheet.getCell(`A${currentRow}`).fill = {
         type: 'pattern',
@@ -773,7 +777,7 @@ const exportMonthlyReport = async (req, res) => {
 
       // Column headers
       const headerRow = worksheet.getRow(currentRow);
-      headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'MSA Team', 'Phone', 'Events Attended'];
+      headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'MSA Team', 'Phone', 'Events Attended', 'Total Lectures Missed'];
       headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       headerRow.fill = {
         type: 'pattern',
@@ -795,7 +799,8 @@ const exportMonthlyReport = async (req, res) => {
           item.user.department || 'N/A',
           item.user.msaTeam || 'N/A',
           item.user.phone || 'N/A',
-          item.count
+          item.count,
+          item.totalLecturesMissed
         ];
 
         // Format phone as text
