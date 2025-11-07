@@ -170,6 +170,10 @@ const exportUsers = async (req, res) => {
           new Date(user.createdAt).toLocaleString('en-IN')
         ];
 
+        // Format phone number as text to prevent Excel errors
+        const phoneCell = dataRow.getCell(13); // Phone is column 13
+        phoneCell.numFmt = '@'; // Text format
+        
         // Add borders
         dataRow.eachCell((cell) => {
           cell.border = {

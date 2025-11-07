@@ -541,6 +541,11 @@ const exportAttendance = async (req, res) => {
           att.latitude.toFixed(6),
           att.longitude.toFixed(6)
         ];
+        
+        // Format phone number as text to prevent Excel errors
+        const phoneCell = dataRow.getCell(8); // Phone is column 8 (Contact No)
+        phoneCell.numFmt = '@'; // Text format
+        
         currentRow++;
       });
 
