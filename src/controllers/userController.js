@@ -252,9 +252,20 @@ const updateUser = async (req, res) => {
       'dateOfBirth', 'admissionNumber', 'mesId'
     ];
 
+    // Fields with unique constraints - only update if not null
+    const uniqueFields = ['rollNo', 'admissionNumber', 'mesId'];
+
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
+        // For unique fields, skip if value is null to avoid unique constraint issues
+        if (uniqueFields.includes(field) && req.body[field] === null) {
+          // Only update if the existing value is not null or if we're setting a new value
+          if (existingUser[field] !== null) {
+            updateData[field] = req.body[field];
+          }
+        } else {
+          updateData[field] = req.body[field];
+        }
       }
     });
 
