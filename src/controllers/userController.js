@@ -219,6 +219,8 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const userId = parseInt(id);
     
+    console.log('Update user request - ID:', id, 'Body:', JSON.stringify(req.body, null, 2));
+    
     if (isNaN(userId)) {
       return res.status(400).json({
         success: false,
@@ -284,9 +286,12 @@ const updateUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating user:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Error updating user'
+      message: 'Error updating user',
+      error: error.message
     });
   }
 };
