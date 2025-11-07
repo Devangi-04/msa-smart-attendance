@@ -420,16 +420,20 @@ async function saveEditMember() {
         mesId: document.getElementById('editMesId').value.trim() || null,
         admissionNumber: document.getElementById('editAdmissionNumber').value.trim() || null,
         stream: 'BSc', // Default stream for Mathematics and Statistics
-        year: document.getElementById('editYear').value || null,
-        division: document.getElementById('editDivision').value || null,
-        department: document.getElementById('editDepartment').value || null,
-        msaTeam: document.getElementById('editMsaTeam').value || null,
-        gender: document.getElementById('editGender').value || null,
+        year: document.getElementById('editYear').value.trim() || null,
+        division: document.getElementById('editDivision').value.trim() || null,
+        department: document.getElementById('editDepartment').value.trim() || null,
+        msaTeam: document.getElementById('editMsaTeam').value.trim() || null,
+        gender: document.getElementById('editGender').value.trim() || null,
         dateOfBirth: document.getElementById('editDateOfBirth').value || null
     };
     
+    console.log('Updating member:', memberId, 'with data:', updateData);
+    
     try {
         const token = safeGetToken();
+        console.log('Sending PUT request to:', `${API_BASE_URL}/users/${memberId}`);
+        
         const response = await fetch(`${API_BASE_URL}/users/${memberId}`, {
             method: 'PUT',
             headers: {
@@ -439,7 +443,9 @@ async function saveEditMember() {
             body: JSON.stringify(updateData)
         });
         
+        console.log('Response status:', response.status);
         const result = await response.json();
+        console.log('Response data:', result);
         
         if (!response.ok) {
             throw new Error(result.message || 'Failed to update member');
