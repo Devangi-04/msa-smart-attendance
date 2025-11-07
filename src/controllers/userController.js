@@ -264,7 +264,12 @@ const updateUser = async (req, res) => {
             updateData[field] = req.body[field];
           }
         } else {
-          updateData[field] = req.body[field];
+          // Convert dateOfBirth string to Date object
+          if (field === 'dateOfBirth' && req.body[field]) {
+            updateData[field] = new Date(req.body[field]);
+          } else {
+            updateData[field] = req.body[field];
+          }
         }
       }
     });
