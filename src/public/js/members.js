@@ -420,11 +420,11 @@ async function saveEditMember() {
         mesId: document.getElementById('editMesId').value.trim() || null,
         admissionNumber: document.getElementById('editAdmissionNumber').value.trim() || null,
         stream: 'BSc', // Default stream for Mathematics and Statistics
-        year: document.getElementById('editYear').value.trim() || null,
-        division: document.getElementById('editDivision').value.trim() || null,
+        year: document.getElementById('editYear').value || null,
+        division: document.getElementById('editDivision').value || null,
         department: document.getElementById('editDepartment').value.trim() || null,
-        msaTeam: document.getElementById('editMsaTeam').value.trim() || null,
-        gender: document.getElementById('editGender').value.trim() || null,
+        msaTeam: document.getElementById('editMsaTeam').value || null,
+        gender: document.getElementById('editGender').value || null,
         dateOfBirth: document.getElementById('editDateOfBirth').value || null
     };
     
