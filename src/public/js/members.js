@@ -412,20 +412,29 @@ async function saveEditMember() {
         return;
     }
     
+    // Helper function to get value or null
+    const getValueOrNull = (elementId, shouldTrim = false) => {
+        const element = document.getElementById(elementId);
+        if (!element) return null;
+        const value = element.value;
+        if (!value || value === '') return null;
+        return shouldTrim ? value.trim() : value;
+    };
+    
     const updateData = {
         name: name,
         role: document.getElementById('editRole').value,
-        phone: document.getElementById('editPhone').value.trim() || null,
-        rollNo: document.getElementById('editRollNo').value.trim() || null,
-        mesId: document.getElementById('editMesId').value.trim() || null,
-        admissionNumber: document.getElementById('editAdmissionNumber').value.trim() || null,
+        phone: getValueOrNull('editPhone', true),
+        rollNo: getValueOrNull('editRollNo', true),
+        mesId: getValueOrNull('editMesId', true),
+        admissionNumber: getValueOrNull('editAdmissionNumber', true),
         stream: 'BSc', // Default stream for Mathematics and Statistics
-        year: document.getElementById('editYear').value || null,
-        division: document.getElementById('editDivision').value || null,
-        department: document.getElementById('editDepartment').value.trim() || null,
-        msaTeam: document.getElementById('editMsaTeam').value || null,
-        gender: document.getElementById('editGender').value || null,
-        dateOfBirth: document.getElementById('editDateOfBirth').value || null
+        year: getValueOrNull('editYear'),
+        division: getValueOrNull('editDivision'),
+        department: getValueOrNull('editDepartment', true),
+        msaTeam: getValueOrNull('editMsaTeam'),
+        gender: getValueOrNull('editGender'),
+        dateOfBirth: getValueOrNull('editDateOfBirth')
     };
     
     console.log('Updating member:', memberId, 'with data:', updateData);
