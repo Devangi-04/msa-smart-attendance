@@ -158,5 +158,48 @@ function showError(message) {
     resultDiv.textContent = message;
 }
 
-// Initialize scanner when page loads
-document.addEventListener('DOMContentLoaded', initializeScanner);
+// Check authentication and initialize scanner when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Scanner: Checking authentication...');
+    
+    const token = getToken();
+    const user = getUser();
+    
+    console.log('Scanner: Token exists:', !!token);
+    console.log('Scanner: User exists:', !!user);
+    
+    if (!token || !user) {
+        console.log('Scanner: No authentication found, redirecting to login...');
+        const resultDiv = document.getElementById('result');
+        resultDiv.classList.remove('d-none');
+        resultDiv.classList.add('alert-warning');
+        resultDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Please login to mark attendance. Redirecting to login page...
+        `;
+        
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2000);
+        return;
+    }
+    
+    console.log('Scanner: Authentication successful, initializing scanner...');
+    console.log('Scanner: User:', user.name, '(', user.email, ')');
+    
+    // Show user info
+    const resultDiv = document.getElementById('result');
+    resultDiv.classList.remove('d-none');
+    resultDiv.classList.add('alert-info');
+    resultDiv.innerHTML = `
+        <i class="fas fa-user me-2"></i>
+        Logged in as: <strong>${user.name}</strong>
+    `;
+    
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+        resultDiv.classList.add('d-none');
+    }, 3000);
+    
+    initializeScanner();
+});
