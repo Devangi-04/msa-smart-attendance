@@ -455,55 +455,110 @@ const exportAttendance = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Attendance');
 
-    // Add headers for MSA attendance
+    // Segregate attendance by year
+    const fyAttendance = event.attendance.filter(att => att.user.year === 'FY');
+    const syAttendance = event.attendance.filter(att => att.user.year === 'SY');
+    const tyAttendance = event.attendance.filter(att => att.user.year === 'TY');
+    const otherAttendance = event.attendance.filter(att => !['FY', 'SY', 'TY'].includes(att.user.year));
+
+    // Set column widths
     worksheet.columns = [
-      { header: 'S.No', key: 'sno', width: 8 },
-      { header: 'Roll No', key: 'rollNo', width: 12 },
-      { header: 'Name', key: 'name', width: 25 },
-      { header: 'Class', key: 'class', width: 15 },
-      { header: 'Division', key: 'division', width: 10 },
-      { header: 'Department', key: 'department', width: 20 },
-      { header: 'MSA Team', key: 'msaTeam', width: 15 },
-      { header: 'Contact No', key: 'phone', width: 15 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Reporting Time', key: 'reportingTime', width: 20 },
-      { header: 'Lectures Missed', key: 'lecturesMissed', width: 15 },
-      { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 }
+      { key: 'sno', width: 8 },
+      { key: 'rollNo', width: 12 },
+      { key: 'name', width: 25 },
+      { key: 'class', width: 15 },
+      { key: 'division', width: 10 },
+      { key: 'department', width: 20 },
+      { key: 'msaTeam', width: 15 },
+      { key: 'phone', width: 15 },
+      { key: 'email', width: 30 },
+      { key: 'reportingTime', width: 20 },
+      { key: 'lecturesMissed', width: 15 },
+      { key: 'latitude', width: 12 },
+      { key: 'longitude', width: 12 }
     ];
 
-    // Style header row
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFD3D3D3' }
-    };
-
-    // Add data rows with MSA fields
-    event.attendance.forEach((att, index) => {
-      worksheet.addRow({
-        sno: index + 1,
-        rollNo: att.user.rollNo || 'N/A',
-        name: att.user.name,
-        class: att.user.year ? `${att.user.year} ${att.user.department || ''}`.trim() : att.user.department || 'N/A',
-        division: att.user.division || 'N/A',
-        department: att.user.department || 'N/A',
-        msaTeam: att.user.msaTeam || 'N/A',
-        phone: att.user.phone || 'N/A',
-        email: att.user.email,
-        reportingTime: moment(att.reportingTime || att.markedAt).format('YYYY-MM-DD HH:mm:ss'),
-        lecturesMissed: att.lecturesMissed || 0,
-        latitude: att.latitude.toFixed(6),
-        longitude: att.longitude.toFixed(6)
-      });
-    });
+    let currentRow = 1;
 
     // Add event info at the top
-    worksheet.insertRow(1, ['Event Name:', event.name]);
-    worksheet.insertRow(2, ['Event Date:', moment(event.date).format('YYYY-MM-DD HH:mm')]);
-    worksheet.insertRow(3, ['Total Attendees:', event.attendance.length]);
-    worksheet.insertRow(4, []);
+    worksheet.getCell(`A${currentRow}`).value = 'Event Name:';
+    worksheet.getCell(`B${currentRow}`).value = event.name;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    worksheet.getCell(`A${currentRow}`).value = 'Event Date:';
+    worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('YYYY-MM-DD HH:mm');
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    worksheet.getCell(`A${currentRow}`).value = 'Total Attendees:';
+    worksheet.getCell(`B${currentRow}`).value = event.attendance.length;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow += 2;
+
+    // Helper function to add year section
+    const addYearSection = (yearName, attendanceData) => {
+      if (attendanceData.length === 0) return;
+
+      // Add year header
+      worksheet.getCell(`A${currentRow}`).value = yearName;
+      worksheet.mergeCells(`A${currentRow}:M${currentRow}`);
+      worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      worksheet.getCell(`A${currentRow}`).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF667EEA' }
+      };
+      worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      currentRow++;
+
+      // Add column headers
+      const headerRow = worksheet.getRow(currentRow);
+      headerRow.values = ['S.No', 'Roll No', 'Name', 'Class', 'Division', 'Department', 'MSA Team', 'Contact No', 'Email', 'Reporting Time', 'Lectures Missed', 'Latitude', 'Longitude'];
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD3D3D3' }
+      };
+      currentRow++;
+
+      // Add data rows
+      attendanceData.forEach((att, index) => {
+        const dataRow = worksheet.getRow(currentRow);
+        dataRow.values = [
+          index + 1,
+          att.user.rollNo || 'N/A',
+          att.user.name,
+          att.user.year ? `${att.user.year} ${att.user.department || ''}`.trim() : att.user.department || 'N/A',
+          att.user.division || 'N/A',
+          att.user.department || 'N/A',
+          att.user.msaTeam || 'N/A',
+          att.user.phone || 'N/A',
+          att.user.email,
+          moment(att.reportingTime || att.markedAt).format('YYYY-MM-DD HH:mm:ss'),
+          att.lecturesMissed || 0,
+          att.latitude.toFixed(6),
+          att.longitude.toFixed(6)
+        ];
+        currentRow++;
+      });
+
+      // Add count row
+      worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
+      worksheet.getCell(`B${currentRow}`).value = attendanceData.length;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      worksheet.getCell(`B${currentRow}`).font = { bold: true };
+      currentRow += 2; // Add spacing between sections
+    };
+
+    // Add sections for each year
+    addYearSection('FY (First Year)', fyAttendance);
+    addYearSection('SY (Second Year)', syAttendance);
+    addYearSection('TY (Third Year)', tyAttendance);
+    if (otherAttendance.length > 0) {
+      addYearSection('Others', otherAttendance);
+    }
 
     // Set response headers
     res.setHeader(

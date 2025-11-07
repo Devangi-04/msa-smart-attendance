@@ -72,72 +72,131 @@ const exportUsers = async (req, res) => {
       ]
     });
 
+    // Segregate users by year
+    const fyUsers = users.filter(user => user.year === 'FY');
+    const syUsers = users.filter(user => user.year === 'SY');
+    const tyUsers = users.filter(user => user.year === 'TY');
+    const otherUsers = users.filter(user => !['FY', 'SY', 'TY'].includes(user.year));
+
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('MSA Members');
 
-    // Define columns
+    // Set column widths
     worksheet.columns = [
-      { header: 'S.No', key: 'sno', width: 8 },
-      { header: 'Name', key: 'name', width: 25 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Role', key: 'role', width: 10 },
-      { header: 'Roll No', key: 'rollNo', width: 15 },
-      { header: 'Stream', key: 'stream', width: 15 },
-      { header: 'Year', key: 'year', width: 10 },
-      { header: 'Division', key: 'division', width: 10 },
-      { header: 'Department', key: 'department', width: 20 },
-      { header: 'MSA Team', key: 'msaTeam', width: 20 },
-      { header: 'Gender', key: 'gender', width: 10 },
-      { header: 'Date of Birth', key: 'dob', width: 15 },
-      { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'Admission No', key: 'admissionNumber', width: 15 },
-      { header: 'MES ID', key: 'mesId', width: 15 },
-      { header: 'Joined On', key: 'createdAt', width: 20 }
+      { key: 'sno', width: 8 },
+      { key: 'name', width: 25 },
+      { key: 'email', width: 30 },
+      { key: 'role', width: 10 },
+      { key: 'rollNo', width: 15 },
+      { key: 'stream', width: 15 },
+      { key: 'year', width: 10 },
+      { key: 'division', width: 10 },
+      { key: 'department', width: 20 },
+      { key: 'msaTeam', width: 20 },
+      { key: 'gender', width: 10 },
+      { key: 'dob', width: 15 },
+      { key: 'phone', width: 15 },
+      { key: 'admissionNumber', width: 15 },
+      { key: 'mesId', width: 15 },
+      { key: 'createdAt', width: 20 }
     ];
 
-    // Style header row
-    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    worksheet.getRow(1).fill = {
+    let currentRow = 1;
+
+    // Add title
+    worksheet.getCell(`A${currentRow}`).value = 'MSA Members List';
+    worksheet.mergeCells(`A${currentRow}:P${currentRow}`);
+    worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
+    worksheet.getCell(`A${currentRow}`).fill = {
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'FF667EEA' }
     };
-    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    currentRow++;
 
-    // Add data rows
-    users.forEach((user, index) => {
-      worksheet.addRow({
-        sno: index + 1,
-        name: user.name || 'N/A',
-        email: user.email,
-        role: user.role,
-        rollNo: user.rollNo || 'N/A',
-        stream: user.stream || 'N/A',
-        year: user.year || 'N/A',
-        division: user.division || 'N/A',
-        department: user.department || 'N/A',
-        msaTeam: user.msaTeam || 'N/A',
-        gender: user.gender || 'N/A',
-        dob: user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('en-IN') : 'N/A',
-        phone: user.phone || 'N/A',
-        admissionNumber: user.admissionNumber || 'N/A',
-        mesId: user.mesId || 'N/A',
-        createdAt: new Date(user.createdAt).toLocaleString('en-IN')
-      });
-    });
+    worksheet.getCell(`A${currentRow}`).value = `Total Members: ${users.length}`;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow += 2;
 
-    // Add borders to all cells
-    worksheet.eachRow((row, rowNumber) => {
-      row.eachCell((cell) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
+    // Helper function to add year section
+    const addYearSection = (yearName, userData) => {
+      if (userData.length === 0) return;
+
+      // Add year header
+      worksheet.getCell(`A${currentRow}`).value = yearName;
+      worksheet.mergeCells(`A${currentRow}:P${currentRow}`);
+      worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      worksheet.getCell(`A${currentRow}`).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF667EEA' }
+      };
+      worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      currentRow++;
+
+      // Add column headers
+      const headerRow = worksheet.getRow(currentRow);
+      headerRow.values = ['S.No', 'Name', 'Email', 'Role', 'Roll No', 'Stream', 'Year', 'Division', 'Department', 'MSA Team', 'Gender', 'Date of Birth', 'Phone', 'Admission No', 'MES ID', 'Joined On'];
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF667EEA' }
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+      currentRow++;
+
+      // Add data rows
+      userData.forEach((user, index) => {
+        const dataRow = worksheet.getRow(currentRow);
+        dataRow.values = [
+          index + 1,
+          user.name || 'N/A',
+          user.email,
+          user.role,
+          user.rollNo || 'N/A',
+          user.stream || 'N/A',
+          user.year || 'N/A',
+          user.division || 'N/A',
+          user.department || 'N/A',
+          user.msaTeam || 'N/A',
+          user.gender || 'N/A',
+          user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('en-IN') : 'N/A',
+          user.phone || 'N/A',
+          user.admissionNumber || 'N/A',
+          user.mesId || 'N/A',
+          new Date(user.createdAt).toLocaleString('en-IN')
+        ];
+
+        // Add borders
+        dataRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+        currentRow++;
       });
-    });
+
+      // Add count row
+      worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
+      worksheet.getCell(`B${currentRow}`).value = userData.length;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      worksheet.getCell(`B${currentRow}`).font = { bold: true };
+      currentRow += 2; // Add spacing between sections
+    };
+
+    // Add sections for each year
+    addYearSection('FY (First Year)', fyUsers);
+    addYearSection('SY (Second Year)', syUsers);
+    addYearSection('TY (Third Year)', tyUsers);
+    if (otherUsers.length > 0) {
+      addYearSection('Others', otherUsers);
+    }
 
     // Generate Excel file
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
