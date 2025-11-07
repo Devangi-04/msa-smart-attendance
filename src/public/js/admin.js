@@ -535,8 +535,16 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
     modal.show();
     
     try {
+        console.log('Fetching attendance from:', `${API_BASE_URL}/attendance/list/${eventId}`);
         const response = await fetch(`${API_BASE_URL}/attendance/list/${eventId}`);
+        console.log('Attendance response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('Attendance result:', result);
         
         if (result.success) {
             if (result.data.length === 0) {
@@ -611,11 +619,16 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
             
             content.innerHTML = html;
         } else {
-            content.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading attendance records</div>';
+            content.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${result.message || 'Failed to load attendance records'}</div>`;
         }
     } catch (error) {
         console.error('Error fetching attendance:', error);
-        content.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading attendance records</div>';
+        content.innerHTML = `<div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error loading attendance records</strong><br>
+            <small>${error.message}</small><br>
+            <small class="text-muted">Check console for details</small>
+        </div>`;
     }
 }
 
