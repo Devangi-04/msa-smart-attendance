@@ -113,6 +113,32 @@ function setupEventHandlers() {
     } else {
         console.error('Admin.js: exportAttendanceBtn not found!');
     }
+    
+    // Monthly Report button
+    const monthlyReportBtn = document.getElementById('monthlyReportBtn');
+    if (monthlyReportBtn) {
+        monthlyReportBtn.addEventListener('click', () => {
+            // Set default to current month
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('reportMonth').value = currentMonth;
+            
+            const modal = new bootstrap.Modal(document.getElementById('monthlyReportModal'));
+            modal.show();
+        });
+        console.log('Admin.js: Monthly Report button handler attached');
+    } else {
+        console.error('Admin.js: monthlyReportBtn not found!');
+    }
+    
+    // Download Monthly Report button
+    const downloadMonthlyReportBtn = document.getElementById('downloadMonthlyReportBtn');
+    if (downloadMonthlyReportBtn) {
+        downloadMonthlyReportBtn.addEventListener('click', downloadMonthlyReport);
+        console.log('Admin.js: Download Monthly Report button handler attached');
+    } else {
+        console.error('Admin.js: downloadMonthlyReportBtn not found!');
+    }
 }
 
 // ==================== CRUD OPERATIONS ====================
@@ -836,6 +862,66 @@ async function viewEventDetails(eventId) {
     await viewEventAttendance(eventId, true);
 }
 
+// Download monthly report
+async function downloadMonthlyReport() {
+    const reportMonth = document.getElementById('reportMonth').value;
+    
+    if (!reportMonth) {
+        alert('Please select a month');
+        return;
+    }
+    
+    // Parse year and month from the input (format: YYYY-MM)
+    const [year, month] = reportMonth.split('-');
+    
+    console.log('Admin.js: Downloading monthly report for:', year, month);
+    
+    try {
+        const token = safeGetToken();
+        const response = await fetch(`${API_BASE_URL}/events/reports/monthly?year=${year}&month=${month}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to download report');
+        }
+        
+        // Get the filename from the response headers
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `monthly-attendance-report-${year}-${month}.xlsx`;
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch) {
+                filename = filenameMatch[1];
+            }
+        }
+        
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('monthlyReportModal'));
+        modal.hide();
+        
+        alert('Monthly report downloaded successfully!');
+    } catch (error) {
+        console.error('Error downloading monthly report:', error);
+        alert('Error downloading report: ' + error.message);
+    }
+}
+
 // Make functions globally available
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
@@ -845,6 +931,7 @@ window.viewEventDetails = viewEventDetails;
 window.showEventDetailsModal = showEventDetailsModal;
 window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
 window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
+window.downloadMonthlyReport = downloadMonthlyReport;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);

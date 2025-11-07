@@ -1,37 +1,25 @@
 // Initialize QR Scanner
 function initializeScanner() {
-    // Show lectures missed input field
-    const lecturesContainer = document.getElementById('lecturesMissedContainer');
-    if (lecturesContainer) {
-        lecturesContainer.style.display = 'block';
-    }
-
     const html5QrcodeScanner = new Html5QrcodeScanner(
         "reader", 
         { 
-            fps: 10,
-            qrbox: 250,
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0,
             showTorchButtonIfSupported: true,
             showZoomSliderIfSupported: true,
-            defaultZoomValueIfSupported: 2,
-            rememberLastUsedCamera: true
-        },
-        /* verbose= */ false);
+            defaultZoomValueIfSupported: 2
+        });
 
     function onScanSuccess(decodedText, decodedResult) {
-        console.log('QR Code scanned:', decodedText);
         // Handle the scanned QR code
         processQRCode(decodedText);
         html5QrcodeScanner.clear();
     }
 
     function onScanError(errorMessage) {
-        // Silently handle scan errors (they happen frequently during scanning)
-        // Only log if it's not the common "No MultiFormat Readers" error
-        if (!errorMessage.includes('No MultiFormat Readers')) {
-            console.error(errorMessage);
-        }
+        // Handle scan error
+        console.error(errorMessage);
     }
 
     html5QrcodeScanner.render(onScanSuccess, onScanError);
@@ -46,10 +34,6 @@ async function processQRCode(qrData) {
         // Parse QR data
         const qrInfo = JSON.parse(qrData);
         
-        // Get lectures missed value
-        const lecturesMissedInput = document.getElementById('lecturesMissed');
-        const lecturesMissed = lecturesMissedInput ? parseInt(lecturesMissedInput.value) || 0 : 0;
-        
         // Prepare attendance data
         const attendanceData = {
             eventId: qrInfo.eventId,
@@ -58,27 +42,14 @@ async function processQRCode(qrData) {
                 latitude: position.coords.latitude,
                 longitude: position.coords.longitude
             },
-            lecturesMissed: lecturesMissed,
-            // userId will be extracted from JWT token on server
+            userId: 'USER_ID' // TODO: Replace with actual user ID
         };
-
-        // Get authentication token
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        
-        if (!token) {
-            showError('Please login first to mark attendance');
-            setTimeout(() => {
-                window.location.href = '/login.html';
-            }, 2000);
-            return;
-        }
 
         // Send attendance data to server
         const response = await fetch('/api/attendance/mark', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(attendanceData)
         });

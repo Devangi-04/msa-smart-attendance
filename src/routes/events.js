@@ -9,7 +9,8 @@ const {
   deleteEvent,
   getEventStats,
   exportAttendance,
-  getDashboardStats
+  getDashboardStats,
+  exportMonthlyReport
 } = require('../controllers/eventController');
 const { authenticate, isAdmin, optionalAuth } = require('../middleware/auth');
 
@@ -27,5 +28,6 @@ router.get('/:eventId/stats', authenticate, getEventStats);
 // Admin only routes
 router.delete('/:eventId', authenticate, isAdmin, deleteEvent);
 router.get('/:eventId/export', authenticate, isAdmin, exportAttendance);
+router.get('/reports/monthly', authenticate, isAdmin, exportMonthlyReport);
 
 module.exports = router;

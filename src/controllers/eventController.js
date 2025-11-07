@@ -641,6 +641,252 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// Export monthly attendance report
+const exportMonthlyReport = async (req, res) => {
+  try {
+    const { year, month } = req.query;
+
+    if (!year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: 'Year and month are required'
+      });
+    }
+
+    // Get start and end dates for the month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+
+    // Fetch all events in the month with attendance
+    const events = await prisma.event.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        attendance: {
+          include: {
+            user: true
+          }
+        }
+      },
+      orderBy: {
+        date: 'asc'
+      }
+    });
+
+    if (events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No events found for the selected month'
+      });
+    }
+
+    // Create Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    const summarySheet = workbook.addWorksheet('Summary');
+
+    // Summary sheet header
+    summarySheet.columns = [
+      { header: 'S.No', key: 'sno', width: 8 },
+      { header: 'Event Name', key: 'eventName', width: 30 },
+      { header: 'Date', key: 'date', width: 20 },
+      { header: 'Total Attendees', key: 'totalAttendees', width: 15 },
+      { header: 'FY Count', key: 'fyCount', width: 12 },
+      { header: 'SY Count', key: 'syCount', width: 12 },
+      { header: 'TY Count', key: 'tyCount', width: 12 }
+    ];
+
+    // Style summary header
+    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summarySheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF667EEA' }
+    };
+    summarySheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    let totalAttendance = 0;
+    let totalFY = 0;
+    let totalSY = 0;
+    let totalTY = 0;
+
+    // Add summary data
+    events.forEach((event, index) => {
+      const fyCount = event.attendance.filter(att => att.user.year === 'FY').length;
+      const syCount = event.attendance.filter(att => att.user.year === 'SY').length;
+      const tyCount = event.attendance.filter(att => att.user.year === 'TY').length;
+
+      summarySheet.addRow({
+        sno: index + 1,
+        eventName: event.name,
+        date: moment(event.date).format('DD-MM-YYYY HH:mm'),
+        totalAttendees: event.attendance.length,
+        fyCount: fyCount,
+        syCount: syCount,
+        tyCount: tyCount
+      });
+
+      totalAttendance += event.attendance.length;
+      totalFY += fyCount;
+      totalSY += syCount;
+      totalTY += tyCount;
+    });
+
+    // Add total row
+    const totalRow = summarySheet.addRow({
+      sno: '',
+      eventName: 'TOTAL',
+      date: '',
+      totalAttendees: totalAttendance,
+      fyCount: totalFY,
+      syCount: totalSY,
+      tyCount: totalTY
+    });
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFEB3B' }
+    };
+
+    // Add borders to summary sheet
+    summarySheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+
+    // Create detailed sheets for each event
+    events.forEach((event, eventIndex) => {
+      const worksheet = workbook.addWorksheet(`Event ${eventIndex + 1}`);
+
+      // Segregate by year
+      const fyAttendance = event.attendance.filter(att => att.user.year === 'FY');
+      const syAttendance = event.attendance.filter(att => att.user.year === 'SY');
+      const tyAttendance = event.attendance.filter(att => att.user.year === 'TY');
+      const otherAttendance = event.attendance.filter(att => !['FY', 'SY', 'TY'].includes(att.user.year));
+
+      worksheet.columns = [
+        { key: 'sno', width: 8 },
+        { key: 'rollNo', width: 12 },
+        { key: 'name', width: 25 },
+        { key: 'year', width: 10 },
+        { key: 'division', width: 10 },
+        { key: 'department', width: 20 },
+        { key: 'phone', width: 15 },
+        { key: 'reportingTime', width: 20 }
+      ];
+
+      let currentRow = 1;
+
+      // Event info
+      worksheet.getCell(`A${currentRow}`).value = 'Event Name:';
+      worksheet.getCell(`B${currentRow}`).value = event.name;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+
+      worksheet.getCell(`A${currentRow}`).value = 'Date:';
+      worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('DD-MM-YYYY HH:mm');
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+
+      worksheet.getCell(`A${currentRow}`).value = 'Total Attendees:';
+      worksheet.getCell(`B${currentRow}`).value = event.attendance.length;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow += 2;
+
+      // Helper to add year section
+      const addYearSection = (yearName, attendanceData) => {
+        if (attendanceData.length === 0) return;
+
+        worksheet.getCell(`A${currentRow}`).value = yearName;
+        worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+        worksheet.getCell(`A${currentRow}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF667EEA' }
+        };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+        currentRow++;
+
+        const headerRow = worksheet.getRow(currentRow);
+        headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'Phone', 'Reporting Time'];
+        headerRow.font = { bold: true };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFD3D3D3' }
+        };
+        currentRow++;
+
+        attendanceData.forEach((att, index) => {
+          const dataRow = worksheet.getRow(currentRow);
+          dataRow.values = [
+            index + 1,
+            att.user.rollNo || 'N/A',
+            att.user.name,
+            att.user.year || 'N/A',
+            att.user.division || 'N/A',
+            att.user.department || 'N/A',
+            att.user.phone || 'N/A',
+            moment(att.reportingTime || att.markedAt).format('DD-MM-YYYY HH:mm:ss')
+          ];
+          
+          // Format phone as text
+          const phoneCell = dataRow.getCell(7);
+          phoneCell.numFmt = '@';
+          
+          currentRow++;
+        });
+
+        worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
+        worksheet.getCell(`B${currentRow}`).value = attendanceData.length;
+        worksheet.getCell(`A${currentRow}`).font = { bold: true };
+        worksheet.getCell(`B${currentRow}`).font = { bold: true };
+        currentRow += 2;
+      };
+
+      addYearSection('FY (First Year)', fyAttendance);
+      addYearSection('SY (Second Year)', syAttendance);
+      addYearSection('TY (Third Year)', tyAttendance);
+      if (otherAttendance.length > 0) {
+        addYearSection('Others', otherAttendance);
+      }
+    });
+
+    // Set response headers
+    const monthName = moment(startDate).format('MMMM-YYYY');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=monthly-attendance-report-${monthName}.xlsx`
+    );
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error exporting monthly report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting monthly report',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createEvent,
   getAllEvents,
@@ -650,5 +896,6 @@ module.exports = {
   deleteEvent,
   getEventStats,
   exportAttendance,
-  getDashboardStats
+  getDashboardStats,
+  exportMonthlyReport
 };

@@ -26,10 +26,5 @@
     ],
     "env": {
         "NODE_ENV": "production"
-    },
-    "build": {
-        "env": {
-            "PRISMA_SKIP_POSTINSTALL_GENERATE": "false"
-        }
     }
 }
