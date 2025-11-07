@@ -419,8 +419,9 @@ async function saveEditMember() {
         rollNo: document.getElementById('editRollNo').value.trim() || null,
         mesId: document.getElementById('editMesId').value.trim() || null,
         admissionNumber: document.getElementById('editAdmissionNumber').value.trim() || null,
+        stream: 'BSc', // Default stream for Mathematics and Statistics
         year: document.getElementById('editYear').value || null,
-        division: document.getElementById('editDivision').value.trim() || null,
+        division: document.getElementById('editDivision').value || null,
         department: document.getElementById('editDepartment').value || null,
         msaTeam: document.getElementById('editMsaTeam').value || null,
         gender: document.getElementById('editGender').value || null,
