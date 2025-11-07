@@ -573,36 +573,45 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
             result.data.forEach((record, index) => {
                 const user = record.user || {};
                 const markedAt = new Date(record.markedAt || record.reportingTime).toLocaleString();
+                const lecturesBadgeClass = record.lecturesMissed === 0 ? 'bg-success' : record.lecturesMissed <= 2 ? 'bg-warning' : 'bg-danger';
                 html += `
                     <tr id="attendance-row-${record.id}">
                         <td>${index + 1}</td>
-                        <td>${user.name || 'N/A'}</td>
+                        <td><strong>${user.name || 'N/A'}</strong></td>
                         <td>${user.rollNo || 'N/A'}</td>
-                        <td>${user.email || 'N/A'}</td>
-                        <td>${markedAt}</td>
+                        <td><small>${user.email || 'N/A'}</small></td>
+                        <td><small>${markedAt}</small></td>
                         <td>
-                            <span id="lectures-display-${record.id}">${record.lecturesMissed || 0}</span>
+                            <div id="lectures-display-${record.id}">
+                                <span class="badge ${lecturesBadgeClass} px-3 py-2">
+                                    ${record.lecturesMissed || 0} ${(record.lecturesMissed || 0) === 1 ? 'lecture' : 'lectures'}
+                                </span>
+                            </div>
                             <div id="lectures-edit-${record.id}" style="display: none;">
-                                <select class="form-select form-select-sm" id="lectures-select-${record.id}">
-                                    <option value="0" ${(record.lecturesMissed || 0) === 0 ? 'selected' : ''}>0</option>
-                                    <option value="1" ${record.lecturesMissed === 1 ? 'selected' : ''}>1</option>
-                                    <option value="2" ${record.lecturesMissed === 2 ? 'selected' : ''}>2</option>
-                                    <option value="3" ${record.lecturesMissed === 3 ? 'selected' : ''}>3</option>
-                                    <option value="4" ${record.lecturesMissed === 4 ? 'selected' : ''}>4</option>
-                                    <option value="5" ${record.lecturesMissed === 5 ? 'selected' : ''}>5</option>
+                                <select class="form-select form-select-sm" id="lectures-select-${record.id}" style="width: auto; display: inline-block;">
+                                    <option value="0" ${(record.lecturesMissed || 0) === 0 ? 'selected' : ''}>0 lectures</option>
+                                    <option value="1" ${record.lecturesMissed === 1 ? 'selected' : ''}>1 lecture</option>
+                                    <option value="2" ${record.lecturesMissed === 2 ? 'selected' : ''}>2 lectures</option>
+                                    <option value="3" ${record.lecturesMissed === 3 ? 'selected' : ''}>3 lectures</option>
+                                    <option value="4" ${record.lecturesMissed === 4 ? 'selected' : ''}>4 lectures</option>
+                                    <option value="5" ${record.lecturesMissed === 5 ? 'selected' : ''}>5 lectures</option>
                                 </select>
                             </div>
                         </td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-sm btn-success" id="save-btn-${record.id}" style="display: none;" onclick="saveLecturesMissed(${record.id})">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                            <button class="btn btn-sm btn-secondary" id="cancel-btn-${record.id}" style="display: none;" onclick="cancelEditLecturesMissed(${record.id}, ${record.lecturesMissed || 0})">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
+                        <td class="text-nowrap">
+                            <div class="btn-group btn-group-sm" role="group" id="action-btns-${record.id}">
+                                <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group" id="save-cancel-btns-${record.id}" style="display: none;">
+                                <button class="btn btn-success" id="save-btn-${record.id}" onclick="saveLecturesMissed(${record.id})" title="Save changes">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-secondary" id="cancel-btn-${record.id}" onclick="cancelEditLecturesMissed(${record.id}, ${record.lecturesMissed || 0})" title="Cancel">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -985,10 +994,9 @@ function editLecturesMissed(attendanceId) {
     document.getElementById(`lectures-display-${attendanceId}`).style.display = 'none';
     document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'block';
     
-    // Toggle buttons
-    document.getElementById(`edit-btn-${attendanceId}`).style.display = 'none';
-    document.getElementById(`save-btn-${attendanceId}`).style.display = 'inline-block';
-    document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'inline-block';
+    // Toggle button groups
+    document.getElementById(`action-btns-${attendanceId}`).style.display = 'none';
+    document.getElementById(`save-cancel-btns-${attendanceId}`).style.display = 'inline-flex';
 }
 
 // Save lectures missed
@@ -1004,6 +1012,11 @@ async function saveLecturesMissed(attendanceId) {
         return;
     }
     
+    // Disable buttons during save
+    document.getElementById(`save-btn-${attendanceId}`).disabled = true;
+    document.getElementById(`cancel-btn-${attendanceId}`).disabled = true;
+    document.getElementById(`save-btn-${attendanceId}`).innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
     try {
         const response = await fetch(`${API_BASE_URL}/attendance/${attendanceId}/lectures`, {
             method: 'PATCH',
@@ -1017,25 +1030,41 @@ async function saveLecturesMissed(attendanceId) {
         const result = await response.json();
         
         if (result.success) {
-            // Update display
-            document.getElementById(`lectures-display-${attendanceId}`).textContent = newValue;
+            // Update display with new badge
+            const badgeClass = newValue === 0 ? 'bg-success' : newValue <= 2 ? 'bg-warning' : 'bg-danger';
+            const lectureText = newValue === 1 ? 'lecture' : 'lectures';
+            document.getElementById(`lectures-display-${attendanceId}`).innerHTML = `
+                <span class="badge ${badgeClass} px-3 py-2">
+                    ${newValue} ${lectureText}
+                </span>
+            `;
             
             // Hide edit, show display
-            document.getElementById(`lectures-display-${attendanceId}`).style.display = 'inline';
+            document.getElementById(`lectures-display-${attendanceId}`).style.display = 'block';
             document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'none';
             
-            // Toggle buttons
-            document.getElementById(`edit-btn-${attendanceId}`).style.display = 'inline-block';
-            document.getElementById(`save-btn-${attendanceId}`).style.display = 'none';
-            document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'none';
+            // Toggle button groups
+            document.getElementById(`action-btns-${attendanceId}`).style.display = 'inline-flex';
+            document.getElementById(`save-cancel-btns-${attendanceId}`).style.display = 'none';
             
-            alert('Lectures missed updated successfully!');
+            // Show success message
+            const row = document.getElementById(`attendance-row-${attendanceId}`);
+            row.classList.add('table-success');
+            setTimeout(() => row.classList.remove('table-success'), 2000);
         } else {
             alert('Error: ' + result.message);
+            // Re-enable buttons
+            document.getElementById(`save-btn-${attendanceId}`).disabled = false;
+            document.getElementById(`cancel-btn-${attendanceId}`).disabled = false;
+            document.getElementById(`save-btn-${attendanceId}`).innerHTML = '<i class="fas fa-check"></i>';
         }
     } catch (error) {
         console.error('Error updating lectures missed:', error);
         alert('Error updating lectures missed. Please try again.');
+        // Re-enable buttons
+        document.getElementById(`save-btn-${attendanceId}`).disabled = false;
+        document.getElementById(`cancel-btn-${attendanceId}`).disabled = false;
+        document.getElementById(`save-btn-${attendanceId}`).innerHTML = '<i class="fas fa-check"></i>';
     }
 }
 
@@ -1047,13 +1076,12 @@ function cancelEditLecturesMissed(attendanceId, originalValue) {
     document.getElementById(`lectures-select-${attendanceId}`).value = originalValue;
     
     // Hide edit, show display
-    document.getElementById(`lectures-display-${attendanceId}`).style.display = 'inline';
+    document.getElementById(`lectures-display-${attendanceId}`).style.display = 'block';
     document.getElementById(`lectures-edit-${attendanceId}`).style.display = 'none';
     
-    // Toggle buttons
-    document.getElementById(`edit-btn-${attendanceId}`).style.display = 'inline-block';
-    document.getElementById(`save-btn-${attendanceId}`).style.display = 'none';
-    document.getElementById(`cancel-btn-${attendanceId}`).style.display = 'none';
+    // Toggle button groups
+    document.getElementById(`action-btns-${attendanceId}`).style.display = 'inline-flex';
+    document.getElementById(`save-cancel-btns-${attendanceId}`).style.display = 'none';
 }
 
 // Make functions globally available
