@@ -52,16 +52,16 @@
                         
                         <div class="alert alert-info">
                             <strong>Instructions:</strong>
-                            <ul class="mb-0 mt-2">
+                            <ol class="mb-0 mt-2">
+                                <li>Enter number of lectures missed below</li>
                                 <li>Allow camera access when prompted</li>
                                 <li>Point your camera at the QR code</li>
-                                <li>Enter number of lectures missed</li>
                                 <li>Hold steady until the code is scanned</li>
-                            </ul>
+                            </ol>
                         </div>
                         
-                        <!-- Lectures Missed Input -->
-                        <div class="mb-3" id="lecturesMissedContainer" style="display:none;">
+                        <!-- Lectures Missed Input - Always Visible -->
+                        <div class="mb-3" id="lecturesMissedContainer">
                             <label for="lecturesMissed" class="form-label">
                                 <i class="fas fa-book me-2"></i>Number of Lectures Missed for This Event *
                             </label>
@@ -73,7 +73,7 @@
                                 <option value="4">4 - Four lectures missed</option>
                                 <option value="5">5 - Five lectures missed</option>
                             </select>
-                            <small class="text-muted">Select the number of lectures you missed for this event</small>
+                            <small class="text-muted">Select the number of lectures you missed for this event before scanning</small>
                         </div>
                         
                         <div id="reader" class="mb-3"></div>
