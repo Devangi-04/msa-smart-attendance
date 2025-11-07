@@ -1,4 +1,6 @@
 // Dashboard functionality
+let currentUser = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
     if (!isAuthenticated()) {
@@ -6,12 +8,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Check if user is admin
+    // Check if user is admin - redirect silently without alert
     const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user.role !== 'ADMIN') {
-            alert('Access Denied: Dashboard is only available for administrators.');
+        currentUser = JSON.parse(userStr);
+        if (currentUser.role !== 'ADMIN') {
+            // Redirect to index without showing alert popup
             window.location.href = '/index.html';
             return;
         }
