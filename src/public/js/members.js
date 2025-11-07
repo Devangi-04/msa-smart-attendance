@@ -439,6 +439,12 @@ async function saveEditMember() {
     
     console.log('Updating member:', memberId, 'with data:', updateData);
     
+    // Disable save button and show loading
+    const saveBtn = document.querySelector('#editMemberModal .btn-warning');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+    
     try {
         const token = safeGetToken();
         console.log('Sending PUT request to:', `${API_BASE_URL}/users/${memberId}`);
@@ -453,11 +459,19 @@ async function saveEditMember() {
         });
         
         console.log('Response status:', response.status);
-        const result = await response.json();
-        console.log('Response data:', result);
+        
+        let result;
+        try {
+            result = await response.json();
+            console.log('Response data:', result);
+        } catch (e) {
+            console.error('Failed to parse response:', e);
+            result = { message: 'Server error' };
+        }
         
         if (!response.ok) {
-            throw new Error(result.message || 'Failed to update member');
+            const errorMsg = result.error || result.message || 'Failed to update member';
+            throw new Error(errorMsg);
         }
         
         // Close modal
@@ -467,10 +481,34 @@ async function saveEditMember() {
         // Reload members
         await loadMembers();
         
-        alert('Member updated successfully!');
+        // Show success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+        successDiv.style.zIndex = '9999';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>Member updated successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+        
     } catch (error) {
         console.error('Error updating member:', error);
-        alert('Error updating member: ' + error.message);
+        
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+    } finally {
+        // Re-enable save button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
     }
 }
 
