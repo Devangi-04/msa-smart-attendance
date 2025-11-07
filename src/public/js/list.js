@@ -389,13 +389,17 @@ function getCurrentLocation() {
     
     if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser');
+        console.error('Geolocation API not available');
         btn.innerHTML = originalText;
         btn.disabled = false;
         return;
     }
     
+    console.log('Requesting location access...');
+    
     navigator.geolocation.getCurrentPosition(
         (position) => {
+            console.log('Location obtained:', position.coords);
             document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
             document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
             btn.innerHTML = '<i class="fas fa-check me-1"></i>Location Set';
@@ -405,8 +409,22 @@ function getCurrentLocation() {
             }, 2000);
         },
         (error) => {
-            console.error('Error getting location:', error);
-            alert('Error getting location: ' + error.message);
+            console.error('Geolocation error:', error);
+            let errorMessage = 'Error getting location: ';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Permission denied. Please allow location access in your browser settings.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information is unavailable. Please check your GPS/location settings.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out. Please try again.';
+                    break;
+                default:
+                    errorMessage += error.message || 'Unknown error occurred.';
+            }
+            alert(errorMessage);
             btn.innerHTML = originalText;
             btn.disabled = false;
         },

@@ -107,11 +107,14 @@ async function processQRCode(qrData) {
 function getCurrentPosition() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
+            console.error('Geolocation API not available');
             showError('Geolocation is not supported by your device. Please use a device with GPS capabilities.');
             reject(new Error('Geolocation not supported'));
             return;
         }
 
+        console.log('Requesting location access for attendance...');
+        
         // Show loading message
         const resultDiv = document.getElementById('result');
         resultDiv.classList.remove('d-none', 'alert-danger', 'alert-success');
@@ -120,10 +123,12 @@ function getCurrentPosition() {
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
+                console.log('Location obtained for attendance:', position.coords);
                 resultDiv.classList.add('d-none');
                 resolve(position);
             },
             (error) => {
+                console.error('Geolocation error:', error);
                 let errorMessage;
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
