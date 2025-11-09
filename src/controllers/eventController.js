@@ -1,8 +1,41 @@
+const { PrismaClient } = require('@prisma/client');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const ExcelJS = require('exceljs');
 const moment = require('moment');
 const prisma = require('../config/database');
+
+// Normalize department names to group similar departments
+const normalizeDepartment = (dept) => {
+  if (!dept) return 'No Department';
+  
+  const deptLower = dept.toLowerCase().trim();
+  
+  // Information Technology variations
+  if (deptLower.includes('information technology') || 
+      deptLower === 'it' || 
+      deptLower.includes('bsc it') ||
+      deptLower.includes('b.sc it')) {
+    return 'Information Technology';
+  }
+  
+  // Computer Science variations
+  if (deptLower.includes('computer science') || 
+      deptLower === 'cs' || 
+      deptLower.includes('bsc cs') ||
+      deptLower.includes('b.sc cs')) {
+    return 'Computer Science';
+  }
+  
+  // Add more normalizations as needed
+  // Electronics variations
+  if (deptLower.includes('electronics') || deptLower === 'ec') {
+    return 'Electronics';
+  }
+  
+  // Return original if no match
+  return dept;
+};
 
 const createEvent = async (req, res) => {
   try {
@@ -451,31 +484,31 @@ const exportAttendance = async (req, res) => {
       });
     }
 
-    // Segregate attendance by year and sort by department within each year
+    // Segregate attendance by year and sort by normalized department within each year
     const fyAttendance = event.attendance.filter(att => att.user.year === 'FY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const syAttendance = event.attendance.filter(att => att.user.year === 'SY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const tyAttendance = event.attendance.filter(att => att.user.year === 'TY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const otherAttendance = event.attendance.filter(att => !['FY', 'SY', 'TY'].includes(att.user.year)).sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
@@ -554,7 +587,7 @@ const exportAttendance = async (req, res) => {
         const dataRow = worksheet.getRow(currentRow);
         dataRow.values = [
           index + 1,
-          att.user.department || 'No Department',
+          normalizeDepartment(att.user.department),
           att.user.year || 'N/A',
           att.user.rollNo || 'N/A',
           att.user.name,
@@ -748,31 +781,31 @@ const exportMonthlyReport = async (req, res) => {
     // Convert map to array
     const usersWithAttendance = Array.from(userAttendanceMap.values());
 
-    // Segregate by year and sort by department within each year
+    // Segregate by year and sort by normalized department within each year
     const fyUsers = usersWithAttendance.filter(u => u.user.year === 'FY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const syUsers = usersWithAttendance.filter(u => u.user.year === 'SY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const tyUsers = usersWithAttendance.filter(u => u.user.year === 'TY').sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
     
     const otherUsers = usersWithAttendance.filter(u => !['FY', 'SY', 'TY'].includes(u.user.year)).sort((a, b) => {
-      const deptA = a.user.department || 'ZZZ';
-      const deptB = b.user.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.user.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.user.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.user.name.localeCompare(b.user.name);
     });
@@ -852,7 +885,7 @@ const exportMonthlyReport = async (req, res) => {
         const dataRow = worksheet.getRow(currentRow);
         dataRow.values = [
           index + 1,
-          item.user.department || 'No Department',
+          normalizeDepartment(item.user.department),
           item.user.year || 'N/A',
           item.user.rollNo || 'N/A',
           item.user.name,

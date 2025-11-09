@@ -44,6 +44,38 @@ const getUsersList = async (req, res) => {
   }
 };
 
+// Normalize department names to group similar departments
+const normalizeDepartment = (dept) => {
+  if (!dept) return 'No Department';
+  
+  const deptLower = dept.toLowerCase().trim();
+  
+  // Information Technology variations
+  if (deptLower.includes('information technology') || 
+      deptLower === 'it' || 
+      deptLower.includes('bsc it') ||
+      deptLower.includes('b.sc it')) {
+    return 'Information Technology';
+  }
+  
+  // Computer Science variations
+  if (deptLower.includes('computer science') || 
+      deptLower === 'cs' || 
+      deptLower.includes('bsc cs') ||
+      deptLower.includes('b.sc cs')) {
+    return 'Computer Science';
+  }
+  
+  // Add more normalizations as needed
+  // Electronics variations
+  if (deptLower.includes('electronics') || deptLower === 'ec') {
+    return 'Electronics';
+  }
+  
+  // Return original if no match
+  return dept;
+};
+
 // Export users to Excel
 const exportUsers = async (req, res) => {
   try {
@@ -72,31 +104,31 @@ const exportUsers = async (req, res) => {
       ]
     });
 
-    // Segregate users by year and sort by department within each year
+    // Segregate users by year and sort by normalized department within each year
     const fyUsers = users.filter(user => user.year === 'FY').sort((a, b) => {
-      const deptA = a.department || 'ZZZ';
-      const deptB = b.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.name.localeCompare(b.name);
     });
     
     const syUsers = users.filter(user => user.year === 'SY').sort((a, b) => {
-      const deptA = a.department || 'ZZZ';
-      const deptB = b.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.name.localeCompare(b.name);
     });
     
     const tyUsers = users.filter(user => user.year === 'TY').sort((a, b) => {
-      const deptA = a.department || 'ZZZ';
-      const deptB = b.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.name.localeCompare(b.name);
     });
     
     const otherUsers = users.filter(user => !['FY', 'SY', 'TY'].includes(user.year)).sort((a, b) => {
-      const deptA = a.department || 'ZZZ';
-      const deptB = b.department || 'ZZZ';
+      const deptA = normalizeDepartment(a.department) || 'ZZZ';
+      const deptB = normalizeDepartment(b.department) || 'ZZZ';
       if (deptA !== deptB) return deptA.localeCompare(deptB);
       return a.name.localeCompare(b.name);
     });
@@ -180,7 +212,7 @@ const exportUsers = async (req, res) => {
         const dataRow = worksheet.getRow(currentRow);
         dataRow.values = [
           index + 1,
-          user.department || 'No Department',
+          normalizeDepartment(user.department),
           user.year || 'N/A',
           user.name || 'N/A',
           user.rollNo || 'N/A',
