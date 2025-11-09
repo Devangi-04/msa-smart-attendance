@@ -15,7 +15,9 @@ const normalizeDepartment = (dept) => {
   if (deptLower.includes('information technology') || 
       deptLower === 'it' || 
       deptLower.includes('bsc it') ||
-      deptLower.includes('b.sc it')) {
+      deptLower.includes('b.sc it') ||
+      deptLower.includes('bscit') ||
+      deptLower.includes('bsc-it')) {
     return 'Information Technology';
   }
   
