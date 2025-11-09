@@ -496,7 +496,7 @@ const exportAttendance = async (req, res) => {
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow += 2;
 
-    // Helper function to add year section
+    // Helper function to add year section with department segregation
     const addYearSection = (yearName, attendanceData) => {
       if (attendanceData.length === 0) return;
 
@@ -512,49 +512,92 @@ const exportAttendance = async (req, res) => {
       worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       currentRow++;
 
-      // Add column headers
-      const headerRow = worksheet.getRow(currentRow);
-      headerRow.values = ['S.No', 'Roll No', 'Name', 'Class', 'Division', 'Department', 'MSA Team', 'Contact No', 'Email', 'Reporting Time', 'Lectures Missed', 'Latitude', 'Longitude'];
-      headerRow.font = { bold: true };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFD3D3D3' }
-      };
-      currentRow++;
-
-      // Add data rows
-      attendanceData.forEach((att, index) => {
-        const dataRow = worksheet.getRow(currentRow);
-        dataRow.values = [
-          index + 1,
-          att.user.rollNo || 'N/A',
-          att.user.name,
-          att.user.year ? `${att.user.year} ${att.user.department || ''}`.trim() : att.user.department || 'N/A',
-          att.user.division || 'N/A',
-          att.user.department || 'N/A',
-          att.user.msaTeam || 'N/A',
-          att.user.phone || 'N/A',
-          att.user.email,
-          moment(att.reportingTime || att.markedAt).format('YYYY-MM-DD HH:mm:ss'),
-          att.lecturesMissed || 0,
-          att.latitude.toFixed(6),
-          att.longitude.toFixed(6)
-        ];
-        
-        // Format phone number as text to prevent Excel errors
-        const phoneCell = dataRow.getCell(8); // Phone is column 8 (Contact No)
-        phoneCell.numFmt = '@'; // Text format
-        
-        currentRow++;
+      // Group attendance by department
+      const departmentGroups = {};
+      attendanceData.forEach(att => {
+        const dept = att.user.department || 'No Department';
+        if (!departmentGroups[dept]) {
+          departmentGroups[dept] = [];
+        }
+        departmentGroups[dept].push(att);
       });
 
-      // Add count row
+      // Sort departments alphabetically
+      const sortedDepartments = Object.keys(departmentGroups).sort();
+
+      // Add each department section
+      sortedDepartments.forEach(department => {
+        const deptAttendance = departmentGroups[department];
+
+        // Add department subheader
+        worksheet.getCell(`A${currentRow}`).value = `${department} (${deptAttendance.length} students)`;
+        worksheet.mergeCells(`A${currentRow}:M${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: 'FF000000' } };
+        worksheet.getCell(`A${currentRow}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'left', vertical: 'middle' };
+        currentRow++;
+
+        // Add column headers
+        const headerRow = worksheet.getRow(currentRow);
+        headerRow.values = ['S.No', 'Roll No', 'Name', 'Class', 'Division', 'Department', 'MSA Team', 'Contact No', 'Email', 'Reporting Time', 'Lectures Missed', 'Latitude', 'Longitude'];
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF667EEA' }
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+        currentRow++;
+
+        // Add data rows for this department
+        deptAttendance.forEach((att, index) => {
+          const dataRow = worksheet.getRow(currentRow);
+          dataRow.values = [
+            index + 1,
+            att.user.rollNo || 'N/A',
+            att.user.name,
+            att.user.year ? `${att.user.year} ${att.user.department || ''}`.trim() : att.user.department || 'N/A',
+            att.user.division || 'N/A',
+            att.user.department || 'N/A',
+            att.user.msaTeam || 'N/A',
+            att.user.phone || 'N/A',
+            att.user.email,
+            moment(att.reportingTime || att.markedAt).format('YYYY-MM-DD HH:mm:ss'),
+            att.lecturesMissed || 0,
+            att.latitude.toFixed(6),
+            att.longitude.toFixed(6)
+          ];
+          
+          // Format phone number as text to prevent Excel errors
+          const phoneCell = dataRow.getCell(8); // Phone is column 8 (Contact No)
+          phoneCell.numFmt = '@'; // Text format
+
+          // Add borders
+          dataRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+          
+          currentRow++;
+        });
+
+        currentRow++; // Add spacing between departments
+      });
+
+      // Add total count row for the year
       worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
       worksheet.getCell(`B${currentRow}`).value = attendanceData.length;
       worksheet.getCell(`A${currentRow}`).font = { bold: true };
       worksheet.getCell(`B${currentRow}`).font = { bold: true };
-      currentRow += 2; // Add spacing between sections
+      currentRow += 2; // Add spacing between year sections
     };
 
     // Add sections for each year
@@ -759,7 +802,7 @@ const exportMonthlyReport = async (req, res) => {
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow += 2;
 
-    // Helper function to add year section
+    // Helper function to add year section with department segregation
     const addYearSection = (yearName, userData) => {
       if (userData.length === 0) return;
 
@@ -775,57 +818,88 @@ const exportMonthlyReport = async (req, res) => {
       worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
       currentRow++;
 
-      // Column headers
-      const headerRow = worksheet.getRow(currentRow);
-      headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'MSA Team', 'Phone', 'Events Attended', 'Total Lectures Missed'];
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF667EEA' }
-      };
-      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-      currentRow++;
-
-      // Data rows
-      userData.forEach((item, index) => {
-        const dataRow = worksheet.getRow(currentRow);
-        dataRow.values = [
-          index + 1,
-          item.user.rollNo || 'N/A',
-          item.user.name,
-          item.user.year || 'N/A',
-          item.user.division || 'N/A',
-          item.user.department || 'N/A',
-          item.user.msaTeam || 'N/A',
-          item.user.phone || 'N/A',
-          item.count,
-          item.totalLecturesMissed
-        ];
-
-        // Format phone as text
-        const phoneCell = dataRow.getCell(8);
-        phoneCell.numFmt = '@';
-
-        // Add borders
-        dataRow.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
-        });
-
-        currentRow++;
+      // Group users by department
+      const departmentGroups = {};
+      userData.forEach(item => {
+        const dept = item.user.department || 'No Department';
+        if (!departmentGroups[dept]) {
+          departmentGroups[dept] = [];
+        }
+        departmentGroups[dept].push(item);
       });
 
-      // Add count row
+      // Sort departments alphabetically
+      const sortedDepartments = Object.keys(departmentGroups).sort();
+
+      // Add each department section
+      sortedDepartments.forEach(department => {
+        const deptUsers = departmentGroups[department];
+
+        // Add department subheader
+        worksheet.getCell(`A${currentRow}`).value = `${department} (${deptUsers.length} students)`;
+        worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+        worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 12, color: { argb: 'FF000000' } };
+        worksheet.getCell(`A${currentRow}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+        worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'left', vertical: 'middle' };
+        currentRow++;
+
+        // Column headers
+        const headerRow = worksheet.getRow(currentRow);
+        headerRow.values = ['S.No', 'Roll No', 'Name', 'Year', 'Division', 'Department', 'MSA Team', 'Phone', 'Events Attended', 'Total Lectures Missed'];
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF667EEA' }
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+        currentRow++;
+
+        // Data rows for this department
+        deptUsers.forEach((item, index) => {
+          const dataRow = worksheet.getRow(currentRow);
+          dataRow.values = [
+            index + 1,
+            item.user.rollNo || 'N/A',
+            item.user.name,
+            item.user.year || 'N/A',
+            item.user.division || 'N/A',
+            item.user.department || 'N/A',
+            item.user.msaTeam || 'N/A',
+            item.user.phone || 'N/A',
+            item.count,
+            item.totalLecturesMissed
+          ];
+
+          // Format phone as text
+          const phoneCell = dataRow.getCell(8);
+          phoneCell.numFmt = '@';
+
+          // Add borders
+          dataRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+          currentRow++;
+        });
+
+        currentRow++; // Add spacing between departments
+      });
+
+      // Add total count row for the year
       worksheet.getCell(`A${currentRow}`).value = `Total ${yearName}:`;
       worksheet.getCell(`B${currentRow}`).value = userData.length;
       worksheet.getCell(`A${currentRow}`).font = { bold: true };
       worksheet.getCell(`B${currentRow}`).font = { bold: true };
-      currentRow += 2;
+      currentRow += 2; // Add spacing between year sections
     };
 
     // Add sections for each year
