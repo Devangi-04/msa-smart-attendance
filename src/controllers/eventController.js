@@ -954,6 +954,314 @@ const exportMonthlyReport = async (req, res) => {
   }
 };
 
+// Get defaulter list for an event (users who didn't attend)
+const getDefaulterList = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { department, year, division } = req.query;
+
+    // Check if event exists
+    const event = await prisma.event.findUnique({
+      where: { id: parseInt(eventId) },
+      include: {
+        attendance: {
+          select: {
+            userId: true
+          }
+        }
+      }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Get list of user IDs who attended
+    const attendedUserIds = event.attendance.map(att => att.userId);
+
+    // Build where clause for users who didn't attend
+    const where = {
+      id: {
+        notIn: attendedUserIds
+      },
+      role: 'USER' // Only include regular users, not admins
+    };
+
+    // Add filters
+    if (department) {
+      where.department = department;
+    }
+    if (year) {
+      where.year = year;
+    }
+    if (division) {
+      where.division = division;
+    }
+
+    // Get all users who didn't attend
+    const defaulters = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        rollNo: true,
+        year: true,
+        division: true,
+        department: true,
+        msaTeam: true,
+        phone: true,
+        stream: true
+      },
+      orderBy: [
+        { year: 'asc' },
+        { division: 'asc' },
+        { rollNo: 'asc' }
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        event: {
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          venue: event.venue
+        },
+        defaulters,
+        totalDefaulters: defaulters.length,
+        totalAttended: attendedUserIds.length
+      }
+    });
+  } catch (error) {
+    console.error('Error getting defaulter list:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving defaulter list'
+    });
+  }
+};
+
+// Export defaulter list to Excel
+const exportDefaulterList = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Check if event exists
+    const event = await prisma.event.findUnique({
+      where: { id: parseInt(eventId) },
+      include: {
+        attendance: {
+          select: {
+            userId: true
+          }
+        }
+      }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Get list of user IDs who attended
+    const attendedUserIds = event.attendance.map(att => att.userId);
+
+    // Get all users who didn't attend (excluding admins)
+    const defaulters = await prisma.user.findMany({
+      where: {
+        id: {
+          notIn: attendedUserIds
+        },
+        role: 'USER'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        rollNo: true,
+        year: true,
+        division: true,
+        department: true,
+        msaTeam: true,
+        phone: true,
+        stream: true
+      },
+      orderBy: [
+        { year: 'asc' },
+        { division: 'asc' },
+        { rollNo: 'asc' }
+      ]
+    });
+
+    // Separate by year
+    const fyDefaulters = defaulters.filter(u => u.year === 'FY');
+    const syDefaulters = defaulters.filter(u => u.year === 'SY');
+    const tyDefaulters = defaulters.filter(u => u.year === 'TY');
+    const otherDefaulters = defaulters.filter(u => !['FY', 'SY', 'TY'].includes(u.year));
+
+    // Create Excel workbook
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Defaulters');
+
+    // Set column widths
+    worksheet.columns = [
+      { key: 'sno', width: 8 },
+      { key: 'department', width: 25 },
+      { key: 'year', width: 10 },
+      { key: 'rollNo', width: 12 },
+      { key: 'name', width: 25 },
+      { key: 'division', width: 10 },
+      { key: 'msaTeam', width: 15 },
+      { key: 'phone', width: 15 },
+      { key: 'email', width: 30 }
+    ];
+
+    let currentRow = 1;
+
+    // Add event info at the top
+    worksheet.getCell(`A${currentRow}`).value = 'Event Name:';
+    worksheet.getCell(`B${currentRow}`).value = event.name;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    worksheet.getCell(`A${currentRow}`).value = 'Event Date:';
+    worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('YYYY-MM-DD HH:mm');
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    worksheet.getCell(`A${currentRow}`).value = 'Total Attended:';
+    worksheet.getCell(`B${currentRow}`).value = attendedUserIds.length;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true };
+    currentRow++;
+
+    worksheet.getCell(`A${currentRow}`).value = 'Total Defaulters:';
+    worksheet.getCell(`B${currentRow}`).value = defaulters.length;
+    worksheet.getCell(`A${currentRow}`).font = { bold: true, color: { argb: 'FFFF0000' } };
+    worksheet.getCell(`B${currentRow}`).font = { bold: true, color: { argb: 'FFFF0000' } };
+    currentRow += 2;
+
+    // Helper function to normalize department
+    const normalizeDepartment = (dept) => {
+      if (!dept) return 'N/A';
+      const deptMap = {
+        'CS': 'Computer Science',
+        'IT': 'Information Technology',
+        'MECH': 'Mechanical Engineering',
+        'CIVIL': 'Civil Engineering',
+        'EE': 'Electrical Engineering',
+        'EC': 'Electronics & Communication',
+        'AIDS': 'Artificial Intelligence & Data Science'
+      };
+      return deptMap[dept] || dept;
+    };
+
+    // Helper function to add year section
+    const addYearSection = (yearName, userData) => {
+      if (userData.length === 0) return;
+
+      // Add year header
+      worksheet.getCell(`A${currentRow}`).value = `${yearName} - DEFAULTERS`;
+      worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+      worksheet.getCell(`A${currentRow}`).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      worksheet.getCell(`A${currentRow}`).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFDC3545' } // Red color for defaulters
+      };
+      worksheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.getRow(currentRow).height = 22;
+      currentRow++;
+
+      // Add column headers
+      const headerRow = worksheet.getRow(currentRow);
+      headerRow.values = ['S.No', 'Department', 'Year', 'Roll No', 'Name', 'Division', 'MSA Team', 'Contact No', 'Email'];
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFDC3545' }
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+      headerRow.height = 20;
+      currentRow++;
+
+      // Add data rows
+      userData.forEach((user, index) => {
+        const dataRow = worksheet.getRow(currentRow);
+        dataRow.values = [
+          index + 1,
+          normalizeDepartment(user.department),
+          user.year || 'N/A',
+          user.rollNo || 'N/A',
+          user.name,
+          user.division || 'N/A',
+          user.msaTeam || 'N/A',
+          user.phone || 'N/A',
+          user.email
+        ];
+
+        // Format phone number as text
+        const phoneCell = dataRow.getCell(8);
+        phoneCell.numFmt = '@';
+
+        // Add borders
+        dataRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+        currentRow++;
+      });
+
+      // Add total count row
+      worksheet.getCell(`A${currentRow}`).value = `Total ${yearName} Defaulters:`;
+      worksheet.getCell(`B${currentRow}`).value = userData.length;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true, color: { argb: 'FFFF0000' } };
+      worksheet.getCell(`B${currentRow}`).font = { bold: true, color: { argb: 'FFFF0000' } };
+      currentRow += 2; // Add spacing between sections
+    };
+
+    // Add sections for each year
+    addYearSection('FY (First Year)', fyDefaulters);
+    addYearSection('SY (Second Year)', syDefaulters);
+    addYearSection('TY (Third Year)', tyDefaulters);
+    if (otherDefaulters.length > 0) {
+      addYearSection('Others', otherDefaulters);
+    }
+
+    // Set response headers
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=defaulters_${event.name.replace(/\s+/g, '_')}_${Date.now()}.xlsx`
+    );
+
+    // Write to response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error exporting defaulter list:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting defaulter list'
+    });
+  }
+};
+
 module.exports = {
   createEvent,
   getAllEvents,
@@ -964,5 +1272,7 @@ module.exports = {
   getEventStats,
   exportAttendance,
   getDashboardStats,
-  exportMonthlyReport
+  exportMonthlyReport,
+  getDefaulterList,
+  exportDefaulterList
 };

@@ -239,10 +239,13 @@ function displayEvents(events) {
                         <button class="btn btn-outline-info" onclick="viewEventAttendance(${event.id})" title="View Attendance">
                             <i class="fas fa-users"></i>
                         </button>
+                        <button class="btn btn-outline-danger" onclick="viewDefaulterList(${event.id})" title="View Defaulters">
+                            <i class="fas fa-user-times"></i>
+                        </button>
                         <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
+                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1084,6 +1087,254 @@ function cancelEditLecturesMissed(attendanceId, originalValue) {
     document.getElementById(`save-cancel-btns-${attendanceId}`).style.display = 'none';
 }
 
+// View defaulter list for an event
+let currentDefaulterEventId = null;
+
+async function viewDefaulterList(eventId) {
+    console.log('Admin.js: viewDefaulterList called for event:', eventId);
+    
+    currentDefaulterEventId = eventId;
+    const modalElement = document.getElementById('defaultersModal');
+    const modal = new bootstrap.Modal(modalElement);
+    const content = document.getElementById('defaultersContent');
+    const eventInfo = document.getElementById('defaultersEventInfo');
+    
+    // Reset filters
+    document.getElementById('defaulterYearFilter').value = '';
+    document.getElementById('defaulterDivisionFilter').value = '';
+    document.getElementById('defaulterDepartmentFilter').value = '';
+    
+    // Show loading
+    content.innerHTML = '<div class="text-center"><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    eventInfo.innerHTML = '';
+    
+    modal.show();
+    
+    try {
+        await loadDefaulterList(eventId);
+    } catch (error) {
+        console.error('Error loading defaulter list:', error);
+        content.innerHTML = `<div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error loading defaulter list</strong><br>
+            <small>${error.message}</small>
+        </div>`;
+    }
+}
+
+async function loadDefaulterList(eventId, filters = {}) {
+    const token = safeGetToken();
+    if (!token) {
+        alert('Please login to view defaulter list');
+        return;
+    }
+    
+    try {
+        // Build query string with filters
+        const params = new URLSearchParams();
+        if (filters.year) params.append('year', filters.year);
+        if (filters.division) params.append('division', filters.division);
+        if (filters.department) params.append('department', filters.department);
+        
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        
+        console.log('Fetching defaulters from:', `${API_BASE_URL}/events/${eventId}/defaulters${queryString}`);
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}/defaulters${queryString}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Defaulters result:', result);
+        
+        if (result.success) {
+            const { event, defaulters, totalDefaulters, totalAttended } = result.data;
+            
+            // Display event info
+            const eventInfo = document.getElementById('defaultersEventInfo');
+            eventInfo.innerHTML = `
+                <div class="card border-danger">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger"><i class="fas fa-calendar-alt me-2"></i>${event.name}</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Date:</strong> ${new Date(event.date).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Venue:</strong> ${event.venue || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1">
+                                    <span class="badge bg-success me-2">${totalAttended} Attended</span>
+                                    <span class="badge bg-danger">${totalDefaulters} Absent</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Display defaulters list
+            const content = document.getElementById('defaultersContent');
+            
+            if (defaulters.length === 0) {
+                content.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Great! No defaulters found.</strong><br>
+                        ${filters.year || filters.division || filters.department ? 'All members matching the filter criteria attended this event.' : 'All members attended this event.'}
+                    </div>
+                `;
+                return;
+            }
+            
+            // Create defaulters table
+            let html = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>${totalDefaulters} member(s) did not attend this event</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-danger">
+                            <tr>
+                                <th>S.No</th>
+                                <th>Roll No</th>
+                                <th>Name</th>
+                                <th>Year</th>
+                                <th>Division</th>
+                                <th>Department</th>
+                                <th>MSA Team</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            defaulters.forEach((user, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${user.rollNo || 'N/A'}</strong></td>
+                        <td>${user.name}</td>
+                        <td><span class="badge bg-info">${user.year || 'N/A'}</span></td>
+                        <td>${user.division || 'N/A'}</td>
+                        <td><small>${user.department || 'N/A'}</small></td>
+                        <td><small>${user.msaTeam || 'N/A'}</small></td>
+                        <td><small>${user.phone || 'N/A'}</small></td>
+                        <td><small>${user.email}</small></td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-danger mt-3">
+                    <strong>Total Defaulters:</strong> ${totalDefaulters}
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${result.message || 'Failed to load defaulter list'}</div>`;
+        }
+    } catch (error) {
+        console.error('Error fetching defaulters:', error);
+        throw error;
+    }
+}
+
+// Export defaulters to Excel
+async function exportDefaulters() {
+    console.log('Admin.js: exportDefaulters called for event:', currentDefaulterEventId);
+    
+    if (!currentDefaulterEventId) {
+        alert('No event selected');
+        return;
+    }
+    
+    const token = safeGetToken();
+    if (!token) {
+        alert('Please login to export defaulters');
+        return;
+    }
+    
+    try {
+        console.log('Admin.js: Fetching export from:', `${API_BASE_URL}/events/${currentDefaulterEventId}/defaulters/export`);
+        
+        const response = await fetch(`${API_BASE_URL}/events/${currentDefaulterEventId}/defaulters/export`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        console.log('Admin.js: Export response status:', response.status);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to export defaulters');
+        }
+        
+        // Get the blob from response
+        const blob = await response.blob();
+        console.log('Admin.js: Blob received, size:', blob.size);
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `defaulters-event-${currentDefaulterEventId}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('Admin.js: Export successful');
+        alert('Defaulters list exported successfully!');
+    } catch (error) {
+        console.error('Admin.js: Error exporting defaulters:', error);
+        alert('Error exporting defaulters: ' + error.message);
+    }
+}
+
+// Set up filter change handlers for defaulters
+document.addEventListener('DOMContentLoaded', () => {
+    // Add filter change handlers
+    const yearFilter = document.getElementById('defaulterYearFilter');
+    const divisionFilter = document.getElementById('defaulterDivisionFilter');
+    const departmentFilter = document.getElementById('defaulterDepartmentFilter');
+    const exportBtn = document.getElementById('exportDefaultersBtn');
+    
+    if (yearFilter && divisionFilter && departmentFilter) {
+        const applyFilters = () => {
+            if (currentDefaulterEventId) {
+                loadDefaulterList(currentDefaulterEventId, {
+                    year: yearFilter.value,
+                    division: divisionFilter.value,
+                    department: departmentFilter.value
+                });
+            }
+        };
+        
+        yearFilter.addEventListener('change', applyFilters);
+        divisionFilter.addEventListener('change', applyFilters);
+        departmentFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportDefaulters);
+    }
+});
+
 // Make functions globally available
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
@@ -1094,6 +1345,8 @@ window.showEventDetailsModal = showEventDetailsModal;
 window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
 window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
 window.downloadMonthlyReport = downloadMonthlyReport;
+window.viewDefaulterList = viewDefaulterList;
+window.exportDefaulters = exportDefaulters;
 window.editLecturesMissed = editLecturesMissed;
 window.saveLecturesMissed = saveLecturesMissed;
 window.cancelEditLecturesMissed = cancelEditLecturesMissed;

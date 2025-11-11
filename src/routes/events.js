@@ -10,7 +10,9 @@ const {
   getEventStats,
   exportAttendance,
   getDashboardStats,
-  exportMonthlyReport
+  exportMonthlyReport,
+  getDefaulterList,
+  exportDefaulterList
 } = require('../controllers/eventController');
 const { authenticate, isAdmin, optionalAuth } = require('../middleware/auth');
 
@@ -29,5 +31,7 @@ router.get('/:eventId/stats', authenticate, getEventStats);
 router.delete('/:eventId', authenticate, isAdmin, deleteEvent);
 router.get('/:eventId/export', authenticate, isAdmin, exportAttendance);
 router.get('/reports/monthly', authenticate, isAdmin, exportMonthlyReport);
+router.get('/:eventId/defaulters', authenticate, isAdmin, getDefaulterList);
+router.get('/:eventId/defaulters/export', authenticate, isAdmin, exportDefaulterList);
 
 module.exports = router;
