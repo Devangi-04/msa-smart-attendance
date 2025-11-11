@@ -392,11 +392,213 @@ const getMyAttendance = async (req, res) => {
   }
 };
 
+// Admin: Get all users
+const getAllUsers = async (req, res) => {
+  try {
+    const { search, role, year, department } = req.query;
+    
+    const where = {};
+    
+    // Add filters
+    if (role) {
+      where.role = role;
+    }
+    if (year) {
+      where.year = year;
+    }
+    if (department) {
+      where.department = department;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { rollNo: { contains: search, mode: 'insensitive' } },
+        { mesId: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        mesId: true,
+        name: true,
+        role: true,
+        department: true,
+        phone: true,
+        rollNo: true,
+        year: true,
+        division: true,
+        msaTeam: true,
+        stream: true,
+        createdAt: true,
+        _count: {
+          select: {
+            attendance: true
+          }
+        }
+      },
+      orderBy: [
+        { role: 'desc' },
+        { year: 'asc' },
+        { rollNo: 'asc' }
+      ]
+    });
+    
+    res.json({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving users'
+    });
+  }
+};
+
+// Admin: Generate temporary password for user
+const generateTempPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mesId: true,
+        rollNo: true,
+        role: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Prevent resetting admin passwords
+    if (user.role === 'ADMIN' && req.user.id !== user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot reset password for other admin users'
+      });
+    }
+    
+    // Generate temporary password
+    const identifier = user.rollNo || user.mesId || user.id;
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    const tempPassword = `MSA${identifier}${randomDigits}`;
+    
+    // Hash temporary password
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
+    // Update password
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { password: hashedPassword }
+    });
+    
+    res.json({
+      success: true,
+      message: `Temporary password generated for ${user.name}`,
+      data: {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        tempPassword: tempPassword
+      }
+    });
+  } catch (error) {
+    console.error('Generate temp password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating temporary password'
+    });
+  }
+};
+
+// Admin: Reset user password with custom password
+const adminResetPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters'
+      });
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Prevent resetting admin passwords
+    if (user.role === 'ADMIN' && req.user.id !== user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot reset password for other admin users'
+      });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { password: hashedPassword }
+    });
+    
+    res.json({
+      success: true,
+      message: `Password reset successfully for ${user.name}`,
+      data: {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Admin reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error resetting password'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  getMyAttendance
+  getMyAttendance,
+  getAllUsers,
+  generateTempPassword,
+  adminResetPassword
 };

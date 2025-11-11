@@ -6,9 +6,12 @@ const {
   getProfile,
   updateProfile,
   changePassword,
-  getMyAttendance
+  getMyAttendance,
+  getAllUsers,
+  generateTempPassword,
+  adminResetPassword
 } = require('../controllers/authController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -37,5 +40,10 @@ router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfile);
 router.post('/change-password', authenticate, changePassword);
 router.get('/my-attendance', authenticate, getMyAttendance);
+
+// Admin only routes
+router.get('/users', authenticate, isAdmin, getAllUsers);
+router.post('/users/:userId/generate-temp-password', authenticate, isAdmin, generateTempPassword);
+router.post('/users/:userId/reset-password', authenticate, isAdmin, adminResetPassword);
 
 module.exports = router;
