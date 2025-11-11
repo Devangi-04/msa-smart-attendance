@@ -195,10 +195,14 @@ function openResetPasswordModal(userId, userName, userEmail) {
     
     const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
     
-    // Reset modal state
+    // Reset modal state - show buttons again
     document.getElementById('customPasswordForm').style.display = 'none';
     document.getElementById('tempPasswordResult').style.display = 'none';
     document.getElementById('newPassword').value = '';
+    
+    // Show the main buttons
+    document.getElementById('generateTempPasswordBtn').style.display = 'block';
+    document.getElementById('customPasswordBtn').style.display = 'block';
     
     // Show user info
     document.getElementById('resetUserInfo').innerHTML = `
