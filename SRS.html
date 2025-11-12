@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSA Smart Attendance System - SRS</title>
+    <style>
+        @media print {
+            @page { margin: 2cm; }
+            body { margin: 0; }
+            .page-break { page-break-before: always; }
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+            color: #000;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24pt;
+            margin-bottom: 10mm;
+            text-decoration: underline;
+        }
+        h2 {
+            font-size: 18pt;
+            margin-top: 8mm;
+            margin-bottom: 4mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+        }
+        h3 {
+            font-size: 14pt;
+            margin-top: 6mm;
+            margin-bottom: 3mm;
+        }
+        h4 {
+            font-size: 12pt;
+            margin-top: 4mm;
+            margin-bottom: 2mm;
+            font-weight: bold;
+        }
+        p {
+            text-align: justify;
+            margin-bottom: 3mm;
+        }
+        ul, ol {
+            margin-left: 8mm;
+        }
+        li {
+            margin-bottom: 2mm;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5mm 0;
+        }
+        table, th, td {
+            border: 1px solid #000;
+        }
+        th, td {
+            padding: 3mm;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .header-info {
+            text-align: center;
+            margin-bottom: 10mm;
+            font-size: 11pt;
+        }
+        .toc {
+            margin: 10mm 0;
+        }
+        .toc li {
+            margin-bottom: 2mm;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 1mm 2mm;
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 5mm;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 9pt;
+        }
+        strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>SOFTWARE REQUIREMENTS SPECIFICATION (SRS)</h1>
+    
+    <h2>MSA Smart Attendance System</h2>
+    
+    <div class="header-info">
+        <p><strong>Version:</strong> 2.0<br>
+        <strong>Date:</strong> November 2025<br>
+        <strong>Prepared By:</strong> Development Team<br>
+        <strong>Project:</strong> MSA Smart Attendance System<br>
+        <strong>Organization:</strong> Mathematics and Statistics Association (MSA)</p>
+    </div>
+    
+    <hr>
+    
+    <h2>TABLE OF CONTENTS</h2>
+    <div class="toc">
+        <ol>
+            <li>Introduction</li>
+            <li>Overall Description</li>
+            <li>System Features</li>
+            <li>External Interface Requirements</li>
+            <li>System Requirements</li>
+            <li>Non-Functional Requirements</li>
+            <li>Database Requirements</li>
+            <li>Appendices</li>
+        </ol>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>1. INTRODUCTION</h2>
+    
+    <h3>1.1 Purpose</h3>
+    <p>This Software Requirements Specification (SRS) document provides a complete description of the MSA Smart Attendance System. It details the functional and non-functional requirements, system interfaces, and constraints for the development and implementation of the web-based attendance management system.</p>
+    
+    <h3>1.2 Document Conventions</h3>
+    <ul>
+        <li><strong>User</strong>: Regular student/member who marks attendance</li>
+        <li><strong>Admin</strong>: Administrator with elevated privileges</li>
+        <li><strong>Event</strong>: Any meeting, session, or gathering requiring attendance</li>
+        <li><strong>MES ID</strong>: Unique identifier for each user</li>
+        <li><strong>QR Code</strong>: Quick Response code for attendance marking</li>
+    </ul>
+    
+    <h3>1.3 Intended Audience</h3>
+    <ul>
+        <li>Project Managers</li>
+        <li>Developers and Programmers</li>
+        <li>Testers and QA Team</li>
+        <li>System Administrators</li>
+        <li>End Users (Students and Administrators)</li>
+        <li>Project Reviewers and Stakeholders</li>
+    </ul>
+    
+    <h3>1.4 Project Scope</h3>
+    <p>The MSA Smart Attendance System is designed to:</p>
+    <ul>
+        <li>Automate attendance tracking for educational institutions</li>
+        <li>Provide real-time attendance monitoring and reporting</li>
+        <li>Enable efficient user and event management</li>
+        <li>Generate comprehensive reports and analytics</li>
+        <li>Ensure secure authentication and data management</li>
+    </ul>
+    
+    <h3>1.5 References</h3>
+    <ul>
+        <li>IEEE Standard 830-1998 for SRS</li>
+        <li>Node.js Documentation</li>
+        <li>Express.js Documentation</li>
+        <li>Prisma ORM Documentation</li>
+        <li>Bootstrap 5 Documentation</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2>2. OVERALL DESCRIPTION</h2>
+    
+    <h3>2.1 Product Perspective</h3>
+    <p>The MSA Smart Attendance System is a standalone web application that operates independently while integrating with modern web browsers and database systems. The system consists of:</p>
+    <ul>
+        <li>Web-based frontend interface</li>
+        <li>RESTful API backend</li>
+        <li>Database management system</li>
+        <li>QR code generation and scanning modules</li>
+    </ul>
+    
+    <h3>2.2 Product Functions</h3>
+    <p>Major functions include:</p>
+    <ul>
+        <li>User authentication and authorization</li>
+        <li>QR code-based attendance marking</li>
+        <li>Event creation and management</li>
+        <li>Real-time attendance tracking</li>
+        <li>Report generation and export</li>
+        <li>User management and password reset</li>
+        <li>Defaulter list generation</li>
+    </ul>
+    
+    <h3>2.3 User Classes and Characteristics</h3>
+    
+    <h4>2.3.1 Regular Users (Students/Members)</h4>
+    <ul>
+        <li><strong>Technical Expertise</strong>: Basic web browsing skills</li>
+        <li><strong>Frequency of Use</strong>: Daily/Weekly</li>
+        <li><strong>Primary Functions</strong>: Mark attendance, view history, manage profile</li>
+    </ul>
+    
+    <h4>2.3.2 Administrators</h4>
+    <ul>
+        <li><strong>Technical Expertise</strong>: Moderate to advanced</li>
+        <li><strong>Frequency of Use</strong>: Daily</li>
+        <li><strong>Primary Functions</strong>: Manage events, users, generate reports, reset passwords</li>
+    </ul>
+    
+    <h3>2.4 Operating Environment</h3>
+    <ul>
+        <li><strong>Client-side</strong>: Modern web browsers (Chrome, Firefox, Safari, Edge)</li>
+        <li><strong>Server-side</strong>: Node.js runtime environment</li>
+        <li><strong>Database</strong>: PostgreSQL or SQLite</li>
+        <li><strong>Hosting</strong>: Cloud platform (Vercel)</li>
+        <li><strong>Devices</strong>: Desktop computers, tablets, smartphones</li>
+    </ul>
+    
+    <h3>2.5 Design and Implementation Constraints</h3>
+    <ul>
+        <li>Must use HTTPS for secure communication</li>
+        <li>Must comply with data protection regulations</li>
+        <li>Must support responsive design for mobile devices</li>
+        <li>Must handle concurrent users efficiently</li>
+        <li>Database must support ACID properties</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2>3. SYSTEM FEATURES</h2>
+    
+    <h3>3.1 User Authentication</h3>
+    
+    <h4>3.1.1 Description</h4>
+    <p>Secure user registration and login system using MES ID and password.</p>
+    
+    <h4>3.1.2 Functional Requirements</h4>
+    
+    <p><strong>FR-AUTH-001</strong>: System shall allow new users to register with required details</p>
+    <ul>
+        <li>Input: Email, password, name, MES ID, roll number, department, year, division</li>
+        <li>Validation: Email format, password minimum 6 characters, unique MES ID</li>
+        <li>Output: User account creation and JWT token</li>
+    </ul>
+    
+    <p><strong>FR-AUTH-002</strong>: System shall authenticate users using MES ID and password</p>
+    <ul>
+        <li>Input: MES ID, password</li>
+        <li>Process: Verify credentials against database</li>
+        <li>Output: JWT token with 7-day expiry</li>
+    </ul>
+    
+    <p><strong>FR-AUTH-003</strong>: System shall maintain user sessions using JWT tokens</p>
+    <ul>
+        <li>Token storage in localStorage/sessionStorage</li>
+        <li>Automatic token validation on protected routes</li>
+    </ul>
+    
+    <h3>3.2 Attendance Management</h3>
+    
+    <h4>3.2.1 Description</h4>
+    <p>QR code-based attendance marking and tracking system.</p>
+    
+    <h4>3.2.2 Functional Requirements</h4>
+    
+    <p><strong>FR-ATT-001</strong>: System shall generate unique QR codes for each event</p>
+    <p><strong>FR-ATT-002</strong>: System shall allow users to scan QR codes to mark attendance</p>
+    <p><strong>FR-ATT-003</strong>: System shall record attendance with timestamp</p>
+    <p><strong>FR-ATT-004</strong>: System shall display attendance status in real-time</p>
+    
+    <h3>3.3 Event Management</h3>
+    
+    <h4>3.3.1 Description</h4>
+    <p>Complete event lifecycle management for administrators.</p>
+    
+    <h4>3.3.2 Functional Requirements</h4>
+    
+    <p><strong>FR-EVENT-001</strong>: System shall allow admins to create new events</p>
+    <p><strong>FR-EVENT-002</strong>: System shall allow admins to edit existing events</p>
+    <p><strong>FR-EVENT-003</strong>: System shall allow admins to delete events</p>
+    <p><strong>FR-EVENT-004</strong>: System shall display list of all events</p>
+    
+    <h3>3.4 User Management (Admin)</h3>
+    
+    <h4>3.4.1 Description</h4>
+    <p>Comprehensive user management system for administrators.</p>
+    
+    <h4>3.4.2 Functional Requirements</h4>
+    
+    <p><strong>FR-USER-001</strong>: System shall display list of all registered users</p>
+    <p><strong>FR-USER-002</strong>: System shall provide search functionality</p>
+    <p><strong>FR-USER-003</strong>: System shall provide filter functionality</p>
+    <p><strong>FR-USER-004</strong>: System shall allow admins to reset user passwords</p>
+    <p><strong>FR-USER-005</strong>: System shall prevent admins from resetting other admin passwords</p>
+    
+    <h3>3.5 Reporting System</h3>
+    
+    <h4>3.5.1 Description</h4>
+    <p>Comprehensive reporting and analytics system.</p>
+    
+    <h4>3.5.2 Functional Requirements</h4>
+    
+    <p><strong>FR-REPORT-001</strong>: System shall generate monthly attendance reports</p>
+    <p><strong>FR-REPORT-002</strong>: System shall generate event-wise attendance reports</p>
+    <p><strong>FR-REPORT-003</strong>: System shall generate defaulter lists</p>
+    <p><strong>FR-REPORT-004</strong>: System shall format Excel reports professionally</p>
+    
+    <div class="page-break"></div>
+    
+    <h2>4. EXTERNAL INTERFACE REQUIREMENTS</h2>
+    
+    <h3>4.1 User Interfaces</h3>
+    
+    <h4>4.1.1 General UI Requirements</h4>
+    <ul>
+        <li><strong>Responsive Design</strong>: Must work on devices from 320px to 4K displays</li>
+        <li><strong>Color Scheme</strong>: Professional color palette with primary blue theme</li>
+        <li><strong>Typography</strong>: Clear, readable fonts (system fonts)</li>
+        <li><strong>Icons</strong>: Font Awesome icons for visual clarity</li>
+        <li><strong>Navigation</strong>: Intuitive navigation bar with role-based menu items</li>
+    </ul>
+    
+    <h3>4.2 Hardware Interfaces</h3>
+    <ul>
+        <li><strong>Camera</strong>: For QR code scanning (mobile devices)</li>
+        <li><strong>Display</strong>: Minimum 320px width support</li>
+        <li><strong>Input Devices</strong>: Keyboard, mouse, touchscreen</li>
+    </ul>
+    
+    <h3>4.3 Software Interfaces</h3>
+    
+    <h4>4.3.1 Database Interface</h4>
+    <ul>
+        <li><strong>System</strong>: PostgreSQL 12+ or SQLite 3+</li>
+        <li><strong>ORM</strong>: Prisma Client</li>
+        <li><strong>Connection</strong>: Connection pooling for performance</li>
+        <li><strong>Transactions</strong>: ACID compliance</li>
+    </ul>
+    
+    <h4>4.3.2 External Libraries</h4>
+    <ul>
+        <li><strong>bcryptjs</strong>: Password hashing (v2.4.3+)</li>
+        <li><strong>jsonwebtoken</strong>: JWT token generation (v9.0.0+)</li>
+        <li><strong>ExcelJS</strong>: Excel file generation (v4.3.0+)</li>
+        <li><strong>express</strong>: Web framework (v4.18.0+)</li>
+        <li><strong>Bootstrap</strong>: UI framework (v5.1.3+)</li>
+    </ul>
+    
+    <h3>4.4 Communication Interfaces</h3>
+    <ul>
+        <li><strong>Protocol</strong>: HTTPS for secure communication</li>
+        <li><strong>API</strong>: RESTful API architecture</li>
+        <li><strong>Data Format</strong>: JSON for request/response</li>
+        <li><strong>Authentication</strong>: Bearer token in Authorization header</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2>5. SYSTEM REQUIREMENTS</h2>
+    
+    <h3>5.1 Functional Requirements Summary</h3>
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Requirement</th>
+            <th>Priority</th>
+        </tr>
+        <tr>
+            <td>FR-001</td>
+            <td>User registration and authentication</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-002</td>
+            <td>QR code generation and scanning</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-003</td>
+            <td>Attendance marking and tracking</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-004</td>
+            <td>Event creation and management</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-005</td>
+            <td>User management</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-006</td>
+            <td>Password reset functionality</td>
+            <td>High</td>
+        </tr>
+        <tr>
+            <td>FR-007</td>
+            <td>Report generation</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td>FR-008</td>
+            <td>Defaulter list generation</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td>FR-009</td>
+            <td>Excel export functionality</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td>FR-010</td>
+            <td>Profile management</td>
+            <td>Low</td>
+        </tr>
+    </table>
+    
+    <div class="page-break"></div>
+    
+    <h2>6. NON-FUNCTIONAL REQUIREMENTS</h2>
+    
+    <h3>6.1 Performance Requirements</h3>
+    
+    <p><strong>NFR-PERF-001</strong>: Response Time</p>
+    <ul>
+        <li>Page load time: &lt; 3 seconds on standard broadband</li>
+        <li>API response time: &lt; 500ms for 95% of requests</li>
+        <li>QR code generation: &lt; 1 second</li>
+        <li>Report generation: &lt; 10 seconds for monthly reports</li>
+    </ul>
+    
+    <p><strong>NFR-PERF-002</strong>: Scalability</p>
+    <ul>
+        <li>Support minimum 500 concurrent users</li>
+        <li>Handle 10,000+ user records</li>
+        <li>Process 1,000+ attendance marks per event</li>
+    </ul>
+    
+    <h3>6.2 Security Requirements</h3>
+    
+    <p><strong>NFR-SEC-001</strong>: Authentication</p>
+    <ul>
+        <li>Passwords hashed using bcrypt (10 salt rounds)</li>
+        <li>JWT tokens with 7-day expiry</li>
+        <li>Secure token storage (httpOnly cookies recommended)</li>
+    </ul>
+    
+    <p><strong>NFR-SEC-002</strong>: Authorization</p>
+    <ul>
+        <li>Role-based access control (RBAC)</li>
+        <li>Admin-only routes protected by middleware</li>
+        <li>User can only access own data</li>
+    </ul>
+    
+    <p><strong>NFR-SEC-003</strong>: Data Protection</p>
+    <ul>
+        <li>HTTPS for all communications</li>
+        <li>SQL injection prevention (Prisma ORM)</li>
+        <li>XSS protection (input sanitization)</li>
+        <li>CSRF protection</li>
+    </ul>
+    
+    <h3>6.3 Reliability Requirements</h3>
+    
+    <p><strong>NFR-REL-001</strong>: Availability</p>
+    <ul>
+        <li>System uptime: 99% (excluding planned maintenance)</li>
+        <li>Graceful degradation on component failure</li>
+        <li>Error logging for debugging</li>
+    </ul>
+    
+    <h3>6.4 Usability Requirements</h3>
+    
+    <p><strong>NFR-USE-001</strong>: User Interface</p>
+    <ul>
+        <li>Intuitive navigation (max 3 clicks to any feature)</li>
+        <li>Consistent design across all pages</li>
+        <li>Clear visual feedback for user actions</li>
+    </ul>
+    
+    <h3>6.5 Portability Requirements</h3>
+    
+    <p><strong>NFR-PORT-001</strong>: Browser Compatibility</p>
+    <ul>
+        <li>Chrome 90+</li>
+        <li>Firefox 88+</li>
+        <li>Safari 14+</li>
+        <li>Edge 90+</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2>7. DATABASE REQUIREMENTS</h2>
+    
+    <h3>7.1 Database Schema</h3>
+    
+    <h4>7.1.1 User Table</h4>
+    <pre>
+User {
+  id: Integer (Primary Key, Auto-increment)
+  email: String (Unique, Required)
+  password: String (Required, Hashed)
+  name: String (Required)
+  role: Enum (USER, ADMIN) (Default: USER)
+  department: String
+  phone: String
+  rollNo: String (Unique)
+  year: String (FY, SY, TY)
+  division: String (A, B, C)
+  mesId: String (Unique)
+  createdAt: DateTime (Auto)
+  updatedAt: DateTime (Auto)
+}
+    </pre>
+    
+    <h4>7.1.2 Event Table</h4>
+    <pre>
+Event {
+  id: Integer (Primary Key, Auto-increment)
+  name: String (Required)
+  description: String
+  date: DateTime (Required)
+  venue: String
+  type: String
+  createdById: Integer (Foreign Key -> User.id)
+  createdAt: DateTime (Auto)
+  updatedAt: DateTime (Auto)
+}
+    </pre>
+    
+    <h4>7.1.3 Attendance Table</h4>
+    <pre>
+Attendance {
+  id: Integer (Primary Key, Auto-increment)
+  userId: Integer (Foreign Key -> User.id)
+  eventId: Integer (Foreign Key -> Event.id)
+  markedAt: DateTime (Auto)
+  createdAt: DateTime (Auto)
+  
+  Unique Constraint: (userId, eventId)
+}
+    </pre>
+    
+    <h3>7.2 Relationships</h3>
+    <ul>
+        <li>User has many Attendance records (One-to-Many)</li>
+        <li>Event has many Attendance records (One-to-Many)</li>
+        <li>User creates many Events (One-to-Many)</li>
+        <li>Attendance belongs to User and Event (Many-to-One)</li>
+    </ul>
+    
+    <div class="page-break"></div>
+    
+    <h2>8. APPENDICES</h2>
+    
+    <h3>8.1 Glossary</h3>
+    
+    <table>
+        <tr>
+            <th>Term</th>
+            <th>Definition</th>
+        </tr>
+        <tr>
+            <td>QR Code</td>
+            <td>Quick Response code used for attendance marking</td>
+        </tr>
+        <tr>
+            <td>JWT</td>
+            <td>JSON Web Token for authentication</td>
+        </tr>
+        <tr>
+            <td>MES ID</td>
+            <td>Unique identifier for each user in the institution</td>
+        </tr>
+        <tr>
+            <td>RBAC</td>
+            <td>Role-Based Access Control</td>
+        </tr>
+        <tr>
+            <td>ORM</td>
+            <td>Object-Relational Mapping</td>
+        </tr>
+        <tr>
+            <td>Defaulter</td>
+            <td>User who did not attend a specific event</td>
+        </tr>
+    </table>
+    
+    <h3>8.2 Acronyms</h3>
+    
+    <table>
+        <tr>
+            <th>Acronym</th>
+            <th>Full Form</th>
+        </tr>
+        <tr>
+            <td>SRS</td>
+            <td>Software Requirements Specification</td>
+        </tr>
+        <tr>
+            <td>MSA</td>
+            <td>Mathematics and Statistics Association</td>
+        </tr>
+        <tr>
+            <td>FY</td>
+            <td>First Year</td>
+        </tr>
+        <tr>
+            <td>SY</td>
+            <td>Second Year</td>
+        </tr>
+        <tr>
+            <td>TY</td>
+            <td>Third Year</td>
+        </tr>
+        <tr>
+            <td>HTTPS</td>
+            <td>Hypertext Transfer Protocol Secure</td>
+        </tr>
+        <tr>
+            <td>REST</td>
+            <td>Representational State Transfer</td>
+        </tr>
+    </table>
+    
+    <h3>8.3 Future Enhancements</h3>
+    <ol>
+        <li>Mobile application (React Native)</li>
+        <li>Biometric authentication</li>
+        <li>SMS/Email notifications</li>
+        <li>Advanced analytics dashboard</li>
+        <li>Geolocation-based attendance</li>
+        <li>Face recognition integration</li>
+        <li>Multi-language support</li>
+        <li>API for third-party integrations</li>
+    </ol>
+    
+    <hr>
+    
+    <p style="text-align: center; margin-top: 20mm;">
+        <strong>Document Version:</strong> 2.0<br>
+        <strong>Last Updated:</strong> November 2025<br>
+        <strong>Status:</strong> Approved
+    </p>
+    
+</body>
+</html>

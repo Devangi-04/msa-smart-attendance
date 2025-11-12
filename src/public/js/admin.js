@@ -269,7 +269,11 @@ function openEventModal(event = null) {
         document.getElementById('eventId').value = event.id;
         document.getElementById('isEditMode').value = 'true';
         document.getElementById('eventName').value = event.name;
-        document.getElementById('eventDate').value = new Date(event.date).toISOString().slice(0, 16);
+        // Convert UTC date to local datetime-local format without timezone shift
+        const eventDate = new Date(event.date);
+        const localDateTime = new Date(eventDate.getTime() - eventDate.getTimezoneOffset() * 60000)
+            .toISOString().slice(0, 16);
+        document.getElementById('eventDate').value = localDateTime;
         document.getElementById('eventVenue').value = event.venue || event.location || '';
         document.getElementById('eventStatus').value = event.status || 'UPCOMING';
         document.getElementById('eventDescription').value = event.description || '';
@@ -336,9 +340,16 @@ async function saveEvent() {
         return;
     }
     
+    // Fix timezone issue: datetime-local returns local time string, 
+    // but new Date().toISOString() converts to UTC causing time shift
+    // We need to preserve the local time as-is
+    const localDate = new Date(date);
+    const timezoneOffset = localDate.getTimezoneOffset() * 60000; // offset in milliseconds
+    const localISOTime = new Date(localDate.getTime() - timezoneOffset).toISOString();
+    
     const eventData = {
         name,
-        date: new Date(date).toISOString(),
+        date: localISOTime,
         venue,
         status,
         description: description || undefined,

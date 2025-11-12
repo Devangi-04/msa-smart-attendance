@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSA Smart Attendance System - Synopsis</title>
+    <style>
+        @media print {
+            @page { margin: 2cm; }
+            body { margin: 0; }
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+            color: #000;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24pt;
+            margin-bottom: 10mm;
+            text-decoration: underline;
+        }
+        h2 {
+            font-size: 18pt;
+            margin-top: 8mm;
+            margin-bottom: 4mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+        }
+        h3 {
+            font-size: 14pt;
+            margin-top: 6mm;
+            margin-bottom: 3mm;
+        }
+        h4 {
+            font-size: 12pt;
+            margin-top: 4mm;
+            margin-bottom: 2mm;
+            font-weight: bold;
+        }
+        p {
+            text-align: justify;
+            margin-bottom: 3mm;
+        }
+        ul, ol {
+            margin-left: 8mm;
+        }
+        li {
+            margin-bottom: 2mm;
+        }
+        .header-info {
+            text-align: center;
+            margin-bottom: 10mm;
+        }
+        .footer {
+            margin-top: 15mm;
+            padding-top: 5mm;
+            border-top: 1px solid #000;
+            font-size: 10pt;
+        }
+        strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>PROJECT SYNOPSIS</h1>
+    
+    <h2>MSA Smart Attendance System</h2>
+    
+    <h3>1. PROJECT TITLE</h3>
+    <p><strong>MSA Smart Attendance System - A Web-Based Attendance Management Solution</strong></p>
+    
+    <h3>2. INTRODUCTION</h3>
+    
+    <h4>2.1 Background</h4>
+    <p>The MSA (Mathematics and Statistics Association) Smart Attendance System is a comprehensive web-based application designed to streamline and automate the attendance tracking process for educational institutions. Traditional manual attendance systems are time-consuming, prone to errors, and lack real-time reporting capabilities. This project addresses these challenges by providing a digital solution that enables efficient attendance management for events, meetings, and academic sessions.</p>
+    
+    <h4>2.2 Purpose</h4>
+    <p>The primary purpose of this system is to:</p>
+    <ul>
+        <li>Automate attendance marking and tracking</li>
+        <li>Provide real-time attendance reports and analytics</li>
+        <li>Enable administrators to manage users and events efficiently</li>
+        <li>Generate comprehensive reports for analysis and record-keeping</li>
+        <li>Identify defaulters (absent members) for specific events</li>
+        <li>Facilitate secure password management for users</li>
+    </ul>
+    
+    <h3>3. PROJECT SCOPE</h3>
+    
+    <h4>3.1 Objectives</h4>
+    <ol>
+        <li><strong>Automated Attendance Management</strong>: Enable quick and accurate attendance marking through QR code scanning</li>
+        <li><strong>User Management</strong>: Provide comprehensive user profile management with role-based access control</li>
+        <li><strong>Event Management</strong>: Allow administrators to create, update, and manage events/meetings</li>
+        <li><strong>Reporting System</strong>: Generate detailed attendance reports with export capabilities</li>
+        <li><strong>Defaulter Tracking</strong>: Identify and track members who missed specific events</li>
+        <li><strong>Security</strong>: Implement secure authentication and password reset mechanisms</li>
+    </ol>
+    
+    <h4>3.2 Target Users</h4>
+    <ul>
+        <li><strong>Students/Members</strong>: Mark attendance, view personal attendance history</li>
+        <li><strong>Administrators</strong>: Manage events, users, generate reports, reset passwords</li>
+    </ul>
+    
+    <h3>4. SYSTEM FEATURES</h3>
+    
+    <h4>4.1 Core Functionalities</h4>
+    
+    <p><strong>For Users:</strong></p>
+    <ul>
+        <li>User registration and authentication (MES ID-based login)</li>
+        <li>QR code-based attendance marking</li>
+        <li>Personal attendance history viewing</li>
+        <li>Profile management</li>
+        <li>Password change functionality</li>
+    </ul>
+    
+    <p><strong>For Administrators:</strong></p>
+    <ul>
+        <li>Event/meeting creation and management</li>
+        <li>Real-time attendance monitoring</li>
+        <li>User management with search and filter capabilities</li>
+        <li>Password reset for users (temporary or custom passwords)</li>
+        <li>Monthly attendance report generation</li>
+        <li>Defaulter list viewing and export</li>
+        <li>Excel report generation with year-wise segregation</li>
+    </ul>
+    
+    <h4>4.2 Technical Features</h4>
+    <ul>
+        <li>Responsive web design (mobile and desktop compatible)</li>
+        <li>Real-time data synchronization</li>
+        <li>QR code generation and scanning</li>
+        <li>Excel export functionality</li>
+        <li>Secure password hashing (bcrypt)</li>
+        <li>JWT-based authentication</li>
+        <li>RESTful API architecture</li>
+    </ul>
+    
+    <h3>5. TECHNOLOGY STACK</h3>
+    
+    <h4>5.1 Frontend</h4>
+    <ul>
+        <li><strong>HTML5, CSS3, JavaScript</strong>: Core web technologies</li>
+        <li><strong>Bootstrap 5</strong>: Responsive UI framework</li>
+        <li><strong>Font Awesome</strong>: Icon library</li>
+        <li><strong>QR Code Libraries</strong>: For QR generation and scanning</li>
+    </ul>
+    
+    <h4>5.2 Backend</h4>
+    <ul>
+        <li><strong>Node.js</strong>: Runtime environment</li>
+        <li><strong>Express.js</strong>: Web application framework</li>
+        <li><strong>Prisma ORM</strong>: Database management</li>
+        <li><strong>PostgreSQL/SQLite</strong>: Database systems</li>
+        <li><strong>bcryptjs</strong>: Password hashing</li>
+        <li><strong>jsonwebtoken</strong>: Authentication tokens</li>
+        <li><strong>ExcelJS</strong>: Excel report generation</li>
+    </ul>
+    
+    <h4>5.3 Deployment</h4>
+    <ul>
+        <li><strong>Vercel</strong>: Cloud hosting platform</li>
+        <li><strong>Git/GitHub</strong>: Version control</li>
+    </ul>
+    
+    <h3>6. SYSTEM ARCHITECTURE</h3>
+    
+    <h4>6.1 Architecture Pattern</h4>
+    <ul>
+        <li><strong>MVC (Model-View-Controller)</strong>: Separation of concerns</li>
+        <li><strong>RESTful API</strong>: Client-server communication</li>
+        <li><strong>Role-Based Access Control (RBAC)</strong>: Security implementation</li>
+    </ul>
+    
+    <h4>6.2 Database Schema</h4>
+    <p><strong>Main Entities:</strong></p>
+    <ul>
+        <li><strong>User</strong>: Stores user information (students/admins)</li>
+        <li><strong>Event</strong>: Stores event/meeting details</li>
+        <li><strong>Attendance</strong>: Records attendance entries</li>
+    </ul>
+    
+    <h3>7. KEY MODULES</h3>
+    
+    <h4>7.1 Authentication Module</h4>
+    <ul>
+        <li>User registration with validation</li>
+        <li>MES ID-based login</li>
+        <li>JWT token generation and verification</li>
+        <li>Password change functionality</li>
+        <li>Admin password reset capabilities</li>
+    </ul>
+    
+    <h4>7.2 Attendance Module</h4>
+    <ul>
+        <li>QR code generation for events</li>
+        <li>QR code scanning for attendance marking</li>
+        <li>Attendance history tracking</li>
+        <li>Real-time attendance status</li>
+    </ul>
+    
+    <h4>7.3 Event Management Module</h4>
+    <ul>
+        <li>Event creation with details (name, date, venue, description)</li>
+        <li>Event editing and deletion</li>
+        <li>Event listing with filters</li>
+        <li>Attendance count per event</li>
+    </ul>
+    
+    <h4>7.4 User Management Module</h4>
+    <ul>
+        <li>User listing with search and filters</li>
+        <li>User profile viewing</li>
+        <li>Password reset (temporary/custom)</li>
+        <li>Role management (User/Admin)</li>
+    </ul>
+    
+    <h4>7.5 Reporting Module</h4>
+    <ul>
+        <li>Monthly attendance reports</li>
+        <li>Event-wise attendance reports</li>
+        <li>Defaulter list generation</li>
+        <li>Excel export with formatting</li>
+        <li>Year-wise segregation (FY, SY, TY)</li>
+    </ul>
+    
+    <h3>8. BENEFITS</h3>
+    
+    <h4>8.1 For Institution</h4>
+    <ul>
+        <li>Reduced administrative workload</li>
+        <li>Accurate attendance records</li>
+        <li>Real-time monitoring capabilities</li>
+        <li>Data-driven decision making</li>
+        <li>Paperless documentation</li>
+    </ul>
+    
+    <h4>8.2 For Students</h4>
+    <ul>
+        <li>Quick attendance marking</li>
+        <li>Access to personal attendance history</li>
+        <li>Transparent attendance tracking</li>
+        <li>No manual sign-in required</li>
+    </ul>
+    
+    <h4>8.3 For Administrators</h4>
+    <ul>
+        <li>Centralized management system</li>
+        <li>Easy report generation</li>
+        <li>Efficient user management</li>
+        <li>Defaulter identification</li>
+        <li>Secure password management</li>
+    </ul>
+    
+    <h3>9. FUTURE ENHANCEMENTS</h3>
+    <ol>
+        <li><strong>Mobile Application</strong>: Native iOS and Android apps</li>
+        <li><strong>Biometric Integration</strong>: Fingerprint/face recognition</li>
+        <li><strong>SMS/Email Notifications</strong>: Automated alerts for low attendance</li>
+        <li><strong>Analytics Dashboard</strong>: Visual charts and graphs</li>
+        <li><strong>Geolocation Verification</strong>: Location-based attendance marking</li>
+        <li><strong>Multi-language Support</strong>: Internationalization</li>
+        <li><strong>API Integration</strong>: Integration with existing student management systems</li>
+        <li><strong>Attendance Prediction</strong>: ML-based attendance forecasting</li>
+    </ol>
+    
+    <h3>10. CONCLUSION</h3>
+    <p>The MSA Smart Attendance System provides a modern, efficient, and secure solution for attendance management in educational institutions. By leveraging web technologies and cloud infrastructure, the system offers real-time tracking, comprehensive reporting, and user-friendly interfaces for all stakeholders. The implementation of features like QR code scanning, defaulter tracking, and secure password management makes it a complete attendance management solution that addresses the limitations of traditional manual systems.</p>
+    
+    <div class="footer">
+        <p><strong>Project Duration</strong>: 6 months<br>
+        <strong>Team Size</strong>: 1-2 developers<br>
+        <strong>Project Type</strong>: Web Application<br>
+        <strong>Domain</strong>: Educational Technology (EdTech)<br>
+        <strong>Status</strong>: Active Development</p>
+    </div>
+    
+    <script>
+        // Auto-print dialog on load (optional)
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>
