@@ -499,17 +499,14 @@ async function saveEvent() {
         return;
     }
     
-    // Fix timezone issue: datetime-local returns local time string, 
-    // but new Date().toISOString() converts to UTC causing time shift
-    // We need to preserve the local time as-is
+    // datetime-local returns format like "2024-11-13T12:00" without timezone
+    // Convert to ISO string so backend interprets it correctly
     const dateValue = document.getElementById('eventDate').value;
-    const localDate = new Date(dateValue);
-    const timezoneOffset = localDate.getTimezoneOffset() * 60000; // offset in milliseconds
-    const localISOTime = new Date(localDate.getTime() - timezoneOffset).toISOString();
+    const dateWithTimezone = new Date(dateValue).toISOString();
     
     const eventData = {
         name: document.getElementById('eventName').value,
-        date: localISOTime,
+        date: dateWithTimezone,
         venue: document.getElementById('eventLocation').value,
         status: document.getElementById('eventStatus').value,
         description: document.getElementById('eventDescription').value || undefined,

@@ -194,7 +194,10 @@ function displayEvents(events) {
     console.log('Admin.js: Rendering', events.length, 'events...');
     
     eventList.innerHTML = events.map(event => {
+        console.log('Event date from backend:', event.date);
         const eventDate = new Date(event.date);
+        console.log('Parsed date object:', eventDate);
+        console.log('Local string:', eventDate.toLocaleString('en-IN'));
         const formattedDate = eventDate.toLocaleString('en-IN', { 
             dateStyle: 'medium', 
             timeStyle: 'short' 
@@ -340,16 +343,19 @@ async function saveEvent() {
         return;
     }
     
-    // Fix timezone issue: datetime-local returns local time string, 
-    // but new Date().toISOString() converts to UTC causing time shift
-    // We need to preserve the local time as-is
-    const localDate = new Date(date);
-    const timezoneOffset = localDate.getTimezoneOffset() * 60000; // offset in milliseconds
-    const localISOTime = new Date(localDate.getTime() - timezoneOffset).toISOString();
+    // datetime-local returns format like "2024-11-13T12:00" without timezone
+    // We need to append timezone info so backend interprets it correctly
+    // Convert to ISO string with timezone offset preserved
+    console.log('Original date input:', date);
+    const dateObj = new Date(date);
+    console.log('Date object:', dateObj);
+    console.log('Timezone offset (minutes):', dateObj.getTimezoneOffset());
+    const dateWithTimezone = dateObj.toISOString();
+    console.log('ISO string sent to backend:', dateWithTimezone);
     
     const eventData = {
         name,
-        date: localISOTime,
+        date: dateWithTimezone,
         venue,
         status,
         description: description || undefined,
