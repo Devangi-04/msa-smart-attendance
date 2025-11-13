@@ -615,6 +615,9 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                                 <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <button class="btn btn-outline-danger" onclick="removeAttendeeFromEvent(${eventId}, ${user.id}, '${(user.name || 'Unknown').replace(/'/g, "\\'")}'))" title="Remove attendee">
+                                    <i class="fas fa-user-minus"></i>
+                                </button>
                             </div>
                             <div class="btn-group btn-group-sm" role="group" id="save-cancel-btns-${record.id}" style="display: none;">
                                 <button class="btn btn-success" id="save-btn-${record.id}" onclick="saveLecturesMissed(${record.id})" title="Save changes">
@@ -1359,6 +1362,169 @@ window.exportDefaulters = exportDefaulters;
 window.editLecturesMissed = editLecturesMissed;
 window.saveLecturesMissed = saveLecturesMissed;
 window.cancelEditLecturesMissed = cancelEditLecturesMissed;
+
+// ===== ATTENDEE MANAGEMENT FUNCTIONS =====
+
+let currentEventForAttendee = null;
+let allUsers = [];
+
+// Load all users for the attendee dropdown
+async function loadUsersForAttendee() {
+    try {
+        const token = safeGetToken();
+        const response = await fetch(`${API_BASE_URL}/auth/users`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            allUsers = result.data;
+            populateUserDropdown();
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// Populate the user dropdown in add attendee modal
+function populateUserDropdown() {
+    const selectUser = document.getElementById('selectUser');
+    selectUser.innerHTML = '<option value="">Choose a user...</option>';
+    
+    allUsers.forEach(user => {
+        if (user.role === 'USER') { // Only show regular users, not admins
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = `${user.name} (${user.rollNo || user.email})`;
+            selectUser.appendChild(option);
+        }
+    });
+}
+
+// Open add attendee modal
+async function openAddAttendeeModal(eventId) {
+    currentEventForAttendee = eventId;
+    
+    // Load users if not already loaded
+    if (allUsers.length === 0) {
+        await loadUsersForAttendee();
+    }
+    
+    // Reset form
+    document.getElementById('addAttendeeForm').reset();
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('addAttendeeModal'));
+    modal.show();
+}
+
+// Add attendee to event
+async function addAttendeeToEvent() {
+    const userId = document.getElementById('selectUser').value;
+    const lecturesMissed = document.getElementById('attendeeLecturesMissed').value;
+    const reportingTime = document.getElementById('attendeeReportingTime').value;
+    
+    if (!userId) {
+        alert('Please select a user');
+        return;
+    }
+    
+    try {
+        const token = safeGetToken();
+        const requestBody = {
+            userId: parseInt(userId),
+            lecturesMissed: parseInt(lecturesMissed)
+        };
+        
+        // Add reporting time if provided
+        if (reportingTime) {
+            requestBody.reportingTime = reportingTime;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/attendance/events/${currentEventForAttendee}/add-attendee`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Attendee added successfully!');
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('addAttendeeModal')).hide();
+            
+            // Refresh attendance list if modal is open
+            if (document.getElementById('attendanceModal').classList.contains('show')) {
+                viewEventAttendance(currentEventForAttendee);
+            }
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error adding attendee:', error);
+        alert('Error adding attendee. Please try again.');
+    }
+}
+
+// Remove attendee from event
+async function removeAttendeeFromEvent(eventId, userId, userName) {
+    if (!confirm(`Are you sure you want to remove ${userName} from this event?`)) {
+        return;
+    }
+    
+    try {
+        const token = safeGetToken();
+        const response = await fetch(`${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Attendee removed successfully!');
+            
+            // Refresh attendance list
+            viewEventAttendance(eventId);
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error removing attendee:', error);
+        alert('Error removing attendee. Please try again.');
+    }
+}
+
+// Add event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Add attendee button in attendance modal
+    const addAttendeeBtn = document.getElementById('addAttendeeBtn');
+    if (addAttendeeBtn) {
+        addAttendeeBtn.addEventListener('click', () => {
+            openAddAttendeeModal(currentEventId);
+        });
+    }
+    
+    // Confirm add attendee button
+    const confirmAddAttendee = document.getElementById('confirmAddAttendee');
+    if (confirmAddAttendee) {
+        confirmAddAttendee.addEventListener('click', addAttendeeToEvent);
+    }
+});
+
+// Make functions globally available
+window.openAddAttendeeModal = openAddAttendeeModal;
+window.addAttendeeToEvent = addAttendeeToEvent;
+window.removeAttendeeFromEvent = removeAttendeeFromEvent;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);

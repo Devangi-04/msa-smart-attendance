@@ -278,8 +278,62 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="addAttendeeBtn">
+                            <i class="fas fa-user-plus me-1"></i>Add Attendee
+                        </button>
                         <button type="button" class="btn btn-success" id="exportAttendanceBtn">
                             <i class="fas fa-file-excel me-1"></i>Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Attendee Modal -->
+        <div class="modal fade" id="addAttendeeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Add Attendee to Event</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addAttendeeForm">
+                            <div class="mb-3">
+                                <label for="selectUser" class="form-label">Select User *</label>
+                                <select class="form-select" id="selectUser" required>
+                                    <option value="">Choose a user...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="attendeeLecturesMissed" class="form-label">Lectures Missed</label>
+                                <select class="form-select" id="attendeeLecturesMissed">
+                                    <option value="0">0 - No lectures missed</option>
+                                    <option value="1">1 - One lecture missed</option>
+                                    <option value="2">2 - Two lectures missed</option>
+                                    <option value="3">3 - Three lectures missed</option>
+                                    <option value="4">4 - Four lectures missed</option>
+                                    <option value="5">5 - Five lectures missed</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="attendeeReportingTime" class="form-label">Reporting Time (Optional)</label>
+                                <input type="datetime-local" class="form-control" id="attendeeReportingTime">
+                                <small class="text-muted">Leave empty to use current time</small>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> Location will be set to the event location automatically.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmAddAttendee">
+                            <i class="fas fa-user-plus me-1"></i>Add Attendee
                         </button>
                     </div>
                 </div>
