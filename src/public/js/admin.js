@@ -1475,36 +1475,62 @@ async function addAttendeeToEvent() {
 
 // Remove attendee from event
 async function removeAttendeeFromEvent(eventId, userId, userName) {
+    console.log('=== REMOVE ATTENDEE FUNCTION CALLED ===');
     console.log('Remove attendee called:', { eventId, userId, userName });
+    console.log('Function arguments:', arguments);
     
     if (!confirm(`Are you sure you want to remove ${userName} from this event?`)) {
+        console.log('Remove attendee cancelled by user');
         return;
     }
     
     try {
         const token = safeGetToken();
-        console.log('Removing attendee with URL:', `${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`);
+        console.log('Token available:', !!token);
+        console.log('API_BASE_URL:', API_BASE_URL);
+        console.log('Full URL:', `${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`);
         
+        if (!token) {
+            console.error('No token available');
+            alert('Please login to remove attendees');
+            return;
+        }
+        
+        console.log('Making DELETE request...');
         const response = await fetch(`${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+            console.error('Response not OK:', response.status, response.statusText);
+        }
         
         const result = await response.json();
         console.log('Remove attendee response:', result);
         
         if (result.success) {
+            console.log('Attendee removed successfully, refreshing list...');
             alert('Attendee removed successfully!');
             
             // Refresh attendance list
             viewEventAttendance(eventId);
         } else {
+            console.error('Remove failed:', result.message);
             alert('Error: ' + result.message);
         }
     } catch (error) {
         console.error('Error removing attendee:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
         alert('Error removing attendee. Please try again.');
     }
 }

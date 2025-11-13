@@ -504,6 +504,14 @@ const addAttendee = async (req, res) => {
 const removeAttendee = async (req, res) => {
   try {
     const { eventId, userId } = req.params;
+    
+    console.log('=== REMOVE ATTENDEE BACKEND CALLED ===');
+    console.log('Remove attendee request:', {
+      eventId,
+      userId,
+      user: req.user,
+      userRole: req.user?.role
+    });
 
     // Check if attendance record exists
     const attendance = await prisma.attendance.findFirst({
@@ -526,7 +534,17 @@ const removeAttendee = async (req, res) => {
       }
     });
 
+    console.log('Attendance record found:', !!attendance);
+    if (attendance) {
+      console.log('Attendance details:', {
+        id: attendance.id,
+        userName: attendance.user.name,
+        eventName: attendance.event.name
+      });
+    }
+
     if (!attendance) {
+      console.log('Attendance record not found for eventId:', eventId, 'userId:', userId);
       return res.status(404).json({
         success: false,
         message: 'Attendance record not found'
@@ -534,10 +552,12 @@ const removeAttendee = async (req, res) => {
     }
 
     // Delete the attendance record
+    console.log('Deleting attendance record with ID:', attendance.id);
     await prisma.attendance.delete({
       where: { id: attendance.id }
     });
 
+    console.log('Attendance record deleted successfully');
     res.json({
       success: true,
       message: `Removed ${attendance.user.name} from ${attendance.event.name}`,
@@ -549,6 +569,11 @@ const removeAttendee = async (req, res) => {
     });
   } catch (error) {
     console.error('Error removing attendee:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: 'Error removing attendee from event'
