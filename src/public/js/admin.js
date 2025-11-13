@@ -196,70 +196,69 @@ function displayEvents(events) {
     // Use requestAnimationFrame to prevent UI blocking
     requestAnimationFrame(() => {
         const htmlContent = events.map(event => {
-        const eventDate = new Date(event.date);
-        const formattedDate = eventDate.toLocaleString('en-IN', { 
-            dateStyle: 'medium', 
-            timeStyle: 'short' 
-        });
-        
-        const attendanceCount = event._count?.attendance || event.attendanceCount || 0;
-        const capacity = event.capacity || 'N/A';
-        const attendanceDisplay = event.capacity ? `${attendanceCount}/${capacity}` : attendanceCount;
-        
-        // Status badge
-        let statusBadge = '';
-        const status = event.status || 'UPCOMING';
-        switch(status) {
-            case 'UPCOMING':
-                statusBadge = '<span class="badge bg-success">Upcoming</span>';
-                break;
-            case 'ACTIVE':
-                statusBadge = '<span class="badge bg-primary">Active</span>';
-                break;
-            case 'COMPLETED':
-                statusBadge = '<span class="badge bg-secondary">Completed</span>';
-                break;
-            case 'CANCELLED':
-                statusBadge = '<span class="badge bg-danger">Cancelled</span>';
-                break;
-            default:
-                statusBadge = `<span class="badge bg-info">${status}</span>`;
-        }
-        
-        return `
-            <tr>
-                <td><strong>${event.name}</strong></td>
-                <td><small>${formattedDate}</small></td>
-                <td><small>${event.venue || event.location || 'N/A'}</small></td>
-                <td>${statusBadge}</td>
-                <td><span class="badge bg-info">${attendanceDisplay}</span></td>
-                <td>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary" onclick="showEventQR(${event.id})" title="Show QR Code">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
-                        <button class="btn btn-outline-info" onclick="viewEventAttendance(${event.id})" title="View Attendance">
-                            <i class="fas fa-users"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="viewDefaulterList(${event.id})" title="View Defaulters">
-                            <i class="fas fa-user-times"></i>
-                        </button>
-                        <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary" onclick="console.log('DELETE BUTTON CLICKED!', ${event.id}); testDelete(${event.id}, ${JSON.stringify(event.name)}); deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+            const eventDate = new Date(event.date);
+            const formattedDate = eventDate.toLocaleString('en-IN', { 
+                dateStyle: 'medium', 
+                timeStyle: 'short' 
+            });
+            
+            const attendanceCount = event._count?.attendance || event.attendanceCount || 0;
+            const capacity = event.capacity || 'N/A';
+            const attendanceDisplay = event.capacity ? `${attendanceCount}/${capacity}` : attendanceCount;
+
+            // Status badge
+            let statusBadge = '';
+            const status = event.status || 'UPCOMING';
+            switch(status) {
+                case 'UPCOMING':
+                    statusBadge = '<span class="badge bg-success">Upcoming</span>';
+                    break;
+                case 'ACTIVE':
+                    statusBadge = '<span class="badge bg-primary">Active</span>';
+                    break;
+                case 'COMPLETED':
+                    statusBadge = '<span class="badge bg-secondary">Completed</span>';
+                    break;
+                case 'CANCELLED':
+                    statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+                    break;
+                default:
+                    statusBadge = `<span class="badge bg-info">${status}</span>`;
+            }
+            
+            return `
+                <tr>
+                    <td><strong>${event.name}</strong></td>
+                    <td><small>${formattedDate}</small></td>
+                    <td><small>${event.venue || event.location || 'N/A'}</small></td>
+                    <td>${statusBadge}</td>
+                    <td><span class="badge bg-info">${attendanceDisplay}</span></td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-primary" onclick="showEventQR(${event.id})" title="Show QR Code">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="viewEventAttendance(${event.id})" title="View Attendance">
+                                <i class="fas fa-users"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="viewDefaulterList(${event.id})" title="View Defaulters">
+                                <i class="fas fa-user-times"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="console.log('DELETE BUTTON CLICKED!', ${event.id}); testDelete(${event.id}, ${JSON.stringify(event.name)}); deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
         
         eventList.innerHTML = htmlContent;
     });
 }
-
 // Open event modal (for add or edit)
 function openEventModal(event = null) {
     const modal = new bootstrap.Modal(document.getElementById('eventModal'));
