@@ -7,10 +7,29 @@ let allEvents = [];
 
 // Helper function to safely get token
 function safeGetToken() {
-    if (typeof getToken === 'function') {
-        return getToken();
+    try {
+        if (typeof getToken === 'function') {
+            return getToken();
+        }
+        return localStorage.getItem('token');
+    } catch (error) {
+        console.error('Error getting token:', error);
+        return null;
     }
-    return localStorage.getItem('token') || sessionStorage.getItem('token');
+}
+
+// Helper function to safely get user
+function safeGetUser() {
+    try {
+        if (typeof getUser === 'function') {
+            return getUser();
+        }
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+        console.error('Error getting user:', error);
+        return null;
+    }
 }
 
 // Initialize the admin panel
@@ -465,6 +484,16 @@ async function deleteEvent(eventId, eventName) {
     
     if (!token) {
         alert('Please login to delete events');
+        deleteInProgress = false;
+        return;
+    }
+    
+    // Check user info
+    const user = safeGetUser();
+    console.log('User info:', { user, role: user?.role, isAdmin: user?.role === 'ADMIN' });
+    
+    if (!user || user.role !== 'ADMIN') {
+        alert('Only administrators can delete events. Your role: ' + (user?.role || 'Unknown'));
         deleteInProgress = false;
         return;
     }
