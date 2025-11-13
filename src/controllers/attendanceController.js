@@ -431,13 +431,28 @@ const addAttendee = async (req, res) => {
       where: {
         eventId: parseInt(eventId),
         userId: parseInt(userId)
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
       }
     });
 
     if (existingAttendance) {
+      const markedAt = new Date(existingAttendance.markedAt || existingAttendance.reportingTime).toLocaleString();
       return res.status(400).json({
         success: false,
-        message: 'User already marked as present for this event'
+        message: `${existingAttendance.user.name} is already marked as present for this event`,
+        details: {
+          userName: existingAttendance.user.name,
+          userEmail: existingAttendance.user.email,
+          markedAt: markedAt,
+          lecturesMissed: existingAttendance.lecturesMissed || 0
+        }
       });
     }
 

@@ -1507,7 +1507,17 @@ async function addAttendeeToEvent() {
                 viewEventAttendance(currentEventForAttendee);
             }
         } else {
-            alert('Error: ' + result.message);
+            // Show detailed error message for duplicate attendance
+            if (result.details && result.details.userName) {
+                const details = result.details;
+                alert(`${result.message}\n\nDetails:\n` +
+                      `• User: ${details.userName}\n` +
+                      `• Email: ${details.userEmail}\n` +
+                      `• Marked At: ${details.markedAt}\n` +
+                      `• Lectures Missed: ${details.lecturesMissed}`);
+            } else {
+                alert('Error: ' + result.message);
+            }
         }
     } catch (error) {
         console.error('Error adding attendee:', error);
