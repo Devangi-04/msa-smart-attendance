@@ -626,18 +626,18 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                         </td>
                         <td class="text-nowrap">
                             <div class="btn-group btn-group-sm" role="group" id="action-btns-${record.id}">
-                                <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
+                                <button class="btn btn-outline-primary" id="edit-btn-${record.id}" data-action="edit-lectures" data-record-id="${record.id}" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, ${JSON.stringify(user.name || 'Unknown')})" title="Remove attendee">
+                                <button class="btn btn-outline-danger" data-action="remove-attendee" data-event-id="${eventId}" data-user-id="${record.userId}" data-user-name="${(user.name || 'Unknown').replace(/"/g, '&quot;')}" title="Remove attendee">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
                             </div>
                             <div class="btn-group btn-group-sm" role="group" id="save-cancel-btns-${record.id}" style="display: none;">
-                                <button class="btn btn-success" id="save-btn-${record.id}" onclick="saveLecturesMissed(${record.id})" title="Save changes">
+                                <button class="btn btn-success" id="save-btn-${record.id}" data-action="save-lectures" data-record-id="${record.id}" title="Save changes">
                                     <i class="fas fa-check"></i>
                                 </button>
-                                <button class="btn btn-secondary" id="cancel-btn-${record.id}" onclick="cancelEditLecturesMissed(${record.id}, ${record.lecturesMissed || 0})" title="Cancel">
+                                <button class="btn btn-secondary" id="cancel-btn-${record.id}" data-action="cancel-edit" data-record-id="${record.id}" data-original-value="${record.lecturesMissed || 0}" title="Cancel">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -656,6 +656,34 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
             `;
             
             content.innerHTML = html;
+            
+            // Add event delegation for attendance table buttons
+            content.addEventListener('click', function(e) {
+                const button = e.target.closest('button[data-action]');
+                if (!button) return;
+                
+                const action = button.getAttribute('data-action');
+                const recordId = button.getAttribute('data-record-id');
+                
+                switch(action) {
+                    case 'edit-lectures':
+                        editLecturesMissed(parseInt(recordId));
+                        break;
+                    case 'save-lectures':
+                        saveLecturesMissed(parseInt(recordId));
+                        break;
+                    case 'cancel-edit':
+                        const originalValue = button.getAttribute('data-original-value');
+                        cancelEditLecturesMissed(parseInt(recordId), parseInt(originalValue));
+                        break;
+                    case 'remove-attendee':
+                        const eventId = button.getAttribute('data-event-id');
+                        const userId = button.getAttribute('data-user-id');
+                        const userName = button.getAttribute('data-user-name').replace(/&quot;/g, '"');
+                        removeAttendeeFromEvent(parseInt(eventId), parseInt(userId), userName);
+                        break;
+                }
+            });
         } else {
             content.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${result.message || 'Failed to load attendance records'}</div>`;
         }
