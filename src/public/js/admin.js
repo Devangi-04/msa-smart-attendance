@@ -405,19 +405,29 @@ async function saveEvent() {
 }
 
 // Delete event
+let deleteInProgress = false;
 async function deleteEvent(eventId, eventName) {
     console.log('Delete event called:', { eventId, eventName });
+    
+    // Prevent multiple simultaneous delete operations
+    if (deleteInProgress) {
+        console.log('Delete already in progress, ignoring duplicate call');
+        return;
+    }
     
     if (!confirm(`Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone.`)) {
         console.log('Delete cancelled by user');
         return;
     }
     
+    deleteInProgress = true;
+    
     const token = safeGetToken();
     console.log('Token available:', !!token);
     
     if (!token) {
         alert('Please login to delete events');
+        deleteInProgress = false;
         return;
     }
     
@@ -449,6 +459,8 @@ async function deleteEvent(eventId, eventName) {
     } catch (error) {
         console.error('Error deleting event:', error);
         alert('Error deleting event. Please try again.');
+    } finally {
+        deleteInProgress = false;
     }
 }
 
@@ -1389,21 +1401,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Make functions globally available
-window.editEvent = editEvent;
-window.deleteEvent = deleteEvent;
-window.showEventQR = showEventQR;
-window.viewEventAttendance = viewEventAttendance;
-window.viewEventDetails = viewEventDetails;
-window.showEventDetailsModal = showEventDetailsModal;
-window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
-window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
+// Functions will be made globally available at the end of the file
 window.downloadMonthlyReport = downloadMonthlyReport;
-window.viewDefaulterList = viewDefaulterList;
 window.exportDefaulters = exportDefaulters;
-window.editLecturesMissed = editLecturesMissed;
-window.saveLecturesMissed = saveLecturesMissed;
-window.cancelEditLecturesMissed = cancelEditLecturesMissed;
 
 // ===== ATTENDEE MANAGEMENT FUNCTIONS =====
 
