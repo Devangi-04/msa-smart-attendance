@@ -406,30 +406,44 @@ async function saveEvent() {
 
 // Delete event
 async function deleteEvent(eventId, eventName) {
+    console.log('Delete event called:', { eventId, eventName });
+    
     if (!confirm(`Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone.`)) {
+        console.log('Delete cancelled by user');
         return;
     }
     
     const token = safeGetToken();
+    console.log('Token available:', !!token);
+    
     if (!token) {
         alert('Please login to delete events');
         return;
     }
     
     try {
+        console.log('Making DELETE request to:', `${API_BASE_URL}/events/${eventId}`);
+        
         const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
         
+        console.log('Delete response status:', response.status);
+        console.log('Delete response headers:', Object.fromEntries(response.headers.entries()));
+        
         const result = await response.json();
+        console.log('Delete response data:', result);
         
         if (result.success) {
+            console.log('Event deleted successfully, reloading events...');
             await loadEvents();
             alert('Event deleted successfully!');
         } else {
+            console.error('Delete failed:', result.message);
             alert(result.message || 'Error deleting event');
         }
     } catch (error) {
@@ -1530,6 +1544,17 @@ document.addEventListener('DOMContentLoaded', function() {
 window.openAddAttendeeModal = openAddAttendeeModal;
 window.addAttendeeToEvent = addAttendeeToEvent;
 window.removeAttendeeFromEvent = removeAttendeeFromEvent;
+window.deleteEvent = deleteEvent;
+window.editEvent = editEvent;
+window.showEventQR = showEventQR;
+window.viewEventAttendance = viewEventAttendance;
+window.viewDefaulterList = viewDefaulterList;
+window.editLecturesMissed = editLecturesMissed;
+window.saveLecturesMissed = saveLecturesMissed;
+window.cancelEditLecturesMissed = cancelEditLecturesMissed;
+window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
+window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
+window.exportAttendance = exportAttendance;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);
