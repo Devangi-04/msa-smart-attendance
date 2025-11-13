@@ -7,29 +7,10 @@ let allEvents = [];
 
 // Helper function to safely get token
 function safeGetToken() {
-    try {
-        if (typeof getToken === 'function') {
-            return getToken();
-        }
-        return localStorage.getItem('token');
-    } catch (error) {
-        console.error('Error getting token:', error);
-        return null;
+    if (typeof getToken === 'function') {
+        return getToken();
     }
-}
-
-// Helper function to safely get user
-function safeGetUser() {
-    try {
-        if (typeof getUser === 'function') {
-            return getUser();
-        }
-        const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-        console.error('Error getting user:', error);
-        return null;
-    }
+    return localStorage.getItem('token') || sessionStorage.getItem('token');
 }
 
 // Initialize the admin panel
@@ -212,72 +193,68 @@ function displayEvents(events) {
     
     console.log('Admin.js: Rendering', events.length, 'events...');
     
-    // Use requestAnimationFrame to prevent UI blocking
-    requestAnimationFrame(() => {
-        const htmlContent = events.map(event => {
-            const eventDate = new Date(event.date);
-            const formattedDate = eventDate.toLocaleString('en-IN', { 
-                dateStyle: 'medium', 
-                timeStyle: 'short' 
-            });
-            
-            const attendanceCount = event._count?.attendance || event.attendanceCount || 0;
-            const capacity = event.capacity || 'N/A';
-            const attendanceDisplay = event.capacity ? `${attendanceCount}/${capacity}` : attendanceCount;
-
-            // Status badge
-            let statusBadge = '';
-            const status = event.status || 'UPCOMING';
-            switch(status) {
-                case 'UPCOMING':
-                    statusBadge = '<span class="badge bg-success">Upcoming</span>';
-                    break;
-                case 'ACTIVE':
-                    statusBadge = '<span class="badge bg-primary">Active</span>';
-                    break;
-                case 'COMPLETED':
-                    statusBadge = '<span class="badge bg-secondary">Completed</span>';
-                    break;
-                case 'CANCELLED':
-                    statusBadge = '<span class="badge bg-danger">Cancelled</span>';
-                    break;
-                default:
-                    statusBadge = `<span class="badge bg-info">${status}</span>`;
-            }
-            
-            return `
-                <tr>
-                    <td><strong>${event.name}</strong></td>
-                    <td><small>${formattedDate}</small></td>
-                    <td><small>${event.venue || event.location || 'N/A'}</small></td>
-                    <td>${statusBadge}</td>
-                    <td><span class="badge bg-info">${attendanceDisplay}</span></td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button class="btn btn-outline-primary" onclick="showEventQR(${event.id})" title="Show QR Code">
-                                <i class="fas fa-qrcode"></i>
-                            </button>
-                            <button class="btn btn-outline-info" onclick="viewEventAttendance(${event.id})" title="View Attendance">
-                                <i class="fas fa-users"></i>
-                            </button>
-                            <button class="btn btn-outline-danger" onclick="viewDefaulterList(${event.id})" title="View Defaulters">
-                                <i class="fas fa-user-times"></i>
-                            </button>
-                            <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+    eventList.innerHTML = events.map(event => {
+        const eventDate = new Date(event.date);
+        const formattedDate = eventDate.toLocaleString('en-IN', { 
+            dateStyle: 'medium', 
+            timeStyle: 'short' 
+        });
         
-        eventList.innerHTML = htmlContent;
-    });
+        const attendanceCount = event._count?.attendance || event.attendanceCount || 0;
+        const capacity = event.capacity || 'N/A';
+        const attendanceDisplay = event.capacity ? `${attendanceCount}/${capacity}` : attendanceCount;
+        
+        // Status badge
+        let statusBadge = '';
+        const status = event.status || 'UPCOMING';
+        switch(status) {
+            case 'UPCOMING':
+                statusBadge = '<span class="badge bg-success">Upcoming</span>';
+                break;
+            case 'ACTIVE':
+                statusBadge = '<span class="badge bg-primary">Active</span>';
+                break;
+            case 'COMPLETED':
+                statusBadge = '<span class="badge bg-secondary">Completed</span>';
+                break;
+            case 'CANCELLED':
+                statusBadge = '<span class="badge bg-danger">Cancelled</span>';
+                break;
+            default:
+                statusBadge = `<span class="badge bg-info">${status}</span>`;
+        }
+        
+        return `
+            <tr>
+                <td><strong>${event.name}</strong></td>
+                <td>${formattedDate}</td>
+                <td>${event.venue || event.location || 'N/A'}</td>
+                <td>${statusBadge}</td>
+                <td>${attendanceDisplay}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="showEventQR(${event.id})" title="Show QR Code">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewEventAttendance(${event.id})" title="View Attendance">
+                            <i class="fas fa-users"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="viewDefaulterList(${event.id})" title="View Defaulters">
+                            <i class="fas fa-user-times"></i>
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
+
 // Open event modal (for add or edit)
 function openEventModal(event = null) {
     const modal = new bootstrap.Modal(document.getElementById('eventModal'));
@@ -429,7 +406,7 @@ async function saveEvent() {
 
 // Delete event
 async function deleteEvent(eventId, eventName) {
-    if (!confirm(`Are you sure you want to delete "${eventName}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone.`)) {
         return;
     }
     
@@ -635,18 +612,18 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                         </td>
                         <td class="text-nowrap">
                             <div class="btn-group btn-group-sm" role="group" id="action-btns-${record.id}">
-                                <button class="btn btn-outline-primary" id="edit-btn-${record.id}" data-action="edit-lectures" data-record-id="${record.id}" title="Edit lectures missed">
+                                <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" data-action="remove-attendee" data-event-id="${eventId}" data-user-id="${record.userId}" data-user-name="${(user.name || 'Unknown').replace(/"/g, '&quot;')}" title="Remove attendee">
+                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, '${(user.name || 'Unknown').replace(/'/g, "\\'")}'))" title="Remove attendee">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
                             </div>
                             <div class="btn-group btn-group-sm" role="group" id="save-cancel-btns-${record.id}" style="display: none;">
-                                <button class="btn btn-success" id="save-btn-${record.id}" data-action="save-lectures" data-record-id="${record.id}" title="Save changes">
+                                <button class="btn btn-success" id="save-btn-${record.id}" onclick="saveLecturesMissed(${record.id})" title="Save changes">
                                     <i class="fas fa-check"></i>
                                 </button>
-                                <button class="btn btn-secondary" id="cancel-btn-${record.id}" data-action="cancel-edit" data-record-id="${record.id}" data-original-value="${record.lecturesMissed || 0}" title="Cancel">
+                                <button class="btn btn-secondary" id="cancel-btn-${record.id}" onclick="cancelEditLecturesMissed(${record.id}, ${record.lecturesMissed || 0})" title="Cancel">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -665,34 +642,6 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
             `;
             
             content.innerHTML = html;
-            
-            // Add event delegation for attendance table buttons
-            content.addEventListener('click', function(e) {
-                const button = e.target.closest('button[data-action]');
-                if (!button) return;
-                
-                const action = button.getAttribute('data-action');
-                const recordId = button.getAttribute('data-record-id');
-                
-                switch(action) {
-                    case 'edit-lectures':
-                        editLecturesMissed(parseInt(recordId));
-                        break;
-                    case 'save-lectures':
-                        saveLecturesMissed(parseInt(recordId));
-                        break;
-                    case 'cancel-edit':
-                        const originalValue = button.getAttribute('data-original-value');
-                        cancelEditLecturesMissed(parseInt(recordId), parseInt(originalValue));
-                        break;
-                    case 'remove-attendee':
-                        const eventId = button.getAttribute('data-event-id');
-                        const userId = button.getAttribute('data-user-id');
-                        const userName = button.getAttribute('data-user-name').replace(/&quot;/g, '"');
-                        removeAttendeeFromEvent(parseInt(eventId), parseInt(userId), userName);
-                        break;
-                }
-            });
         } else {
             content.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${result.message || 'Failed to load attendance records'}</div>`;
         }
@@ -1398,9 +1347,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Functions will be made globally available at the end of the file
+// Make functions globally available
+window.editEvent = editEvent;
+window.deleteEvent = deleteEvent;
+window.showEventQR = showEventQR;
+window.viewEventAttendance = viewEventAttendance;
+window.viewEventDetails = viewEventDetails;
+window.showEventDetailsModal = showEventDetailsModal;
+window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
+window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
 window.downloadMonthlyReport = downloadMonthlyReport;
+window.viewDefaulterList = viewDefaulterList;
 window.exportDefaulters = exportDefaulters;
+window.editLecturesMissed = editLecturesMissed;
+window.saveLecturesMissed = saveLecturesMissed;
+window.cancelEditLecturesMissed = cancelEditLecturesMissed;
 
 // ===== ATTENDEE MANAGEMENT FUNCTIONS =====
 
@@ -1465,11 +1426,6 @@ async function addAttendeeToEvent() {
     const lecturesMissed = document.getElementById('attendeeLecturesMissed').value;
     const reportingTime = document.getElementById('attendeeReportingTime').value;
     
-    // Get selected user details for debugging
-    const selectedUserElement = document.getElementById('selectUser');
-    const selectedUserText = selectedUserElement.options[selectedUserElement.selectedIndex]?.text;
-    console.log('Adding attendee:', { userId, selectedUserText, lecturesMissed, reportingTime });
-    
     if (!userId) {
         alert('Please select a user');
         return;
@@ -1509,20 +1465,7 @@ async function addAttendeeToEvent() {
                 viewEventAttendance(currentEventForAttendee);
             }
         } else {
-            // Show detailed error message for duplicate attendance
-            if (result.details && result.details.userName) {
-                const details = result.details;
-                console.log('Duplicate attendance error details:', details);
-                alert(`${result.message}\n\nDetails:\n` +
-                      `• User ID: ${details.userId}\n` +
-                      `• Name: ${details.userName}\n` +
-                      `• Roll No: ${details.userRollNo || 'N/A'}\n` +
-                      `• Email: ${details.userEmail}\n` +
-                      `• Marked At: ${details.markedAt}\n` +
-                      `• Lectures Missed: ${details.lecturesMissed}`);
-            } else {
-                alert('Error: ' + result.message);
-            }
+            alert('Error: ' + result.message);
         }
     } catch (error) {
         console.error('Error adding attendee:', error);
@@ -1587,18 +1530,6 @@ document.addEventListener('DOMContentLoaded', function() {
 window.openAddAttendeeModal = openAddAttendeeModal;
 window.addAttendeeToEvent = addAttendeeToEvent;
 window.removeAttendeeFromEvent = removeAttendeeFromEvent;
-window.deleteEvent = deleteEvent;
-window.editEvent = editEvent;
-
-window.showEventQR = showEventQR;
-window.viewEventAttendance = viewEventAttendance;
-window.viewDefaulterList = viewDefaulterList;
-window.editLecturesMissed = editLecturesMissed;
-window.saveLecturesMissed = saveLecturesMissed;
-window.cancelEditLecturesMissed = cancelEditLecturesMissed;
-window.closeEventDetailsAndShowQR = closeEventDetailsAndShowQR;
-window.closeEventDetailsAndShowAttendance = closeEventDetailsAndShowAttendance;
-window.exportAttendance = exportAttendance;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', initializeAdmin);

@@ -384,39 +384,10 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
-    
-    console.log('Delete event request received:', {
-      eventId,
-      user: req.user,
-      userRole: req.user?.role
-    });
 
-    // Check if event exists first
-    const existingEvent = await prisma.event.findUnique({
-      where: { id: parseInt(eventId) }
-    });
-
-    if (!existingEvent) {
-      console.log('Event not found:', eventId);
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
-    }
-
-    console.log('Deleting event:', existingEvent.name);
-
-    // Delete related attendance records first (if any foreign key constraints)
-    await prisma.attendance.deleteMany({
-      where: { eventId: parseInt(eventId) }
-    });
-
-    // Then delete the event
     await prisma.event.delete({
       where: { id: parseInt(eventId) }
     });
-
-    console.log('Event deleted successfully:', eventId);
 
     res.json({
       success: true,
@@ -424,14 +395,9 @@ const deleteEvent = async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting event:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
     res.status(500).json({
       success: false,
-      message: 'Error deleting event: ' + error.message
+      message: 'Error deleting event'
     });
   }
 };
