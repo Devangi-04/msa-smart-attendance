@@ -245,7 +245,7 @@ function displayEvents(events) {
                         <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
+                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -615,7 +615,7 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                                 <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, '${(user.name || 'Unknown').replace(/'/g, "\\'")}'))" title="Remove attendee">
+                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, ${JSON.stringify(user.name || 'Unknown')})" title="Remove attendee">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
                             </div>
