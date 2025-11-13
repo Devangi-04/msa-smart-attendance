@@ -266,7 +266,7 @@ function displayEvents(events) {
                             <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-outline-secondary" onclick="console.log('DELETE BUTTON CLICKED!', ${event.id}); testDelete(${event.id}, ${JSON.stringify(event.name)}); deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
+                            <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -415,39 +415,8 @@ async function saveEvent() {
         
         if (result.success) {
             bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
-            
-            // Show loading state
-            const eventList = document.getElementById('eventList');
-            if (eventList) {
-                eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
-            }
-            
-            // Use setTimeout with longer delay for slower devices
-            setTimeout(async () => {
-                try {
-                    await loadEvents();
-                    // Use a shorter, less intrusive notification
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
-                    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
-                    notification.innerHTML = `
-                        <i class="fas fa-check-circle me-2"></i>
-                        ${isEditMode ? 'Event updated successfully!' : 'Event created successfully!'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.body.appendChild(notification);
-                    
-                    // Auto-remove after 3 seconds
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 3000);
-                } catch (error) {
-                    console.error('Error reloading events:', error);
-                    alert('Event saved but failed to refresh list. Please refresh the page.');
-                }
-            }, 300);
+            await loadEvents();
+            alert(isEditMode ? 'Event updated successfully!' : 'Event created successfully!');
         } else {
             alert('Error saving event:\n\n' + (result.message || 'Unknown error'));
             console.error('Admin.js: Server error:', result);
@@ -459,106 +428,36 @@ async function saveEvent() {
 }
 
 // Delete event
-let deleteInProgress = false;
 async function deleteEvent(eventId, eventName) {
-    console.log('=== DELETE EVENT FUNCTION CALLED ===');
-    console.log('Delete event called:', { eventId, eventName });
-    console.log('Function arguments:', arguments);
-    console.log('deleteInProgress flag:', deleteInProgress);
-    
-    // Prevent multiple simultaneous delete operations
-    if (deleteInProgress) {
-        console.log('Delete already in progress, ignoring duplicate call');
+    if (!confirm(`Are you sure you want to delete "${eventName}"?`)) {
         return;
     }
-    
-    if (!confirm(`Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone.`)) {
-        console.log('Delete cancelled by user');
-        return;
-    }
-    
-    deleteInProgress = true;
     
     const token = safeGetToken();
-    console.log('Token available:', !!token);
-    
     if (!token) {
         alert('Please login to delete events');
-        deleteInProgress = false;
-        return;
-    }
-    
-    // Check user info
-    const user = safeGetUser();
-    console.log('User info:', { user, role: user?.role, isAdmin: user?.role === 'ADMIN' });
-    
-    if (!user || user.role !== 'ADMIN') {
-        alert('Only administrators can delete events. Your role: ' + (user?.role || 'Unknown'));
-        deleteInProgress = false;
         return;
     }
     
     try {
-        console.log('Making DELETE request to:', `${API_BASE_URL}/events/${eventId}`);
-        
         const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${token}`
             }
         });
         
-        console.log('Delete response status:', response.status);
-        console.log('Delete response headers:', Object.fromEntries(response.headers.entries()));
-        
         const result = await response.json();
-        console.log('Delete response data:', result);
         
         if (result.success) {
-            console.log('Event deleted successfully, reloading events...');
-            
-            // Show loading state
-            const eventList = document.getElementById('eventList');
-            if (eventList) {
-                eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
-            }
-            
-            // Use setTimeout with longer delay for slower devices
-            setTimeout(async () => {
-                try {
-                    await loadEvents();
-                    // Use a shorter, less intrusive notification
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
-                    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
-                    notification.innerHTML = `
-                        <i class="fas fa-trash me-2"></i>
-                        Event deleted successfully!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.body.appendChild(notification);
-                    
-                    // Auto-remove after 3 seconds
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 3000);
-                } catch (error) {
-                    console.error('Error reloading events:', error);
-                    alert('Event deleted but failed to refresh list. Please refresh the page.');
-                }
-            }, 300);
+            await loadEvents();
+            alert('Event deleted successfully!');
         } else {
-            console.error('Delete failed:', result.message);
             alert(result.message || 'Error deleting event');
         }
     } catch (error) {
         console.error('Error deleting event:', error);
         alert('Error deleting event. Please try again.');
-    } finally {
-        deleteInProgress = false;
     }
 }
 
@@ -1691,18 +1590,6 @@ window.removeAttendeeFromEvent = removeAttendeeFromEvent;
 window.deleteEvent = deleteEvent;
 window.editEvent = editEvent;
 
-// Debug: Verify functions are assigned
-console.log('Admin.js: Global functions assigned:', {
-    deleteEvent: typeof window.deleteEvent,
-    editEvent: typeof window.editEvent,
-    deleteEventFunction: window.deleteEvent
-});
-
-// Test function to verify onclick is working
-window.testDelete = function(eventId, eventName) {
-    console.log('TEST DELETE FUNCTION CALLED!', { eventId, eventName });
-    alert('Test delete function called for: ' + eventName);
-};
 window.showEventQR = showEventQR;
 window.viewEventAttendance = viewEventAttendance;
 window.viewDefaulterList = viewDefaulterList;
