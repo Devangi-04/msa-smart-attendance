@@ -245,7 +245,7 @@ function displayEvents(events) {
                         <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
+                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -615,7 +615,7 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                                 <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, ${JSON.stringify(user.name || 'Unknown')})" title="Remove attendee">
+                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, '${(user.name || 'Unknown').replace(/'/g, "\\'")}'))" title="Remove attendee">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
                             </div>
@@ -1475,17 +1475,16 @@ async function addAttendeeToEvent() {
 
 // Remove attendee from event
 async function removeAttendeeFromEvent(eventId, userId, userName) {
+    console.log('Remove attendee called:', { eventId, userId, userName });
+    
     if (!confirm(`Are you sure you want to remove ${userName} from this event?`)) {
         return;
     }
     
-    const token = safeGetToken();
-    if (!token) {
-        alert('Please login to remove attendees');
-        return;
-    }
-    
     try {
+        const token = safeGetToken();
+        console.log('Removing attendee with URL:', `${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`);
+        
         const response = await fetch(`${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`, {
             method: 'DELETE',
             headers: {
@@ -1494,10 +1493,13 @@ async function removeAttendeeFromEvent(eventId, userId, userName) {
         });
         
         const result = await response.json();
+        console.log('Remove attendee response:', result);
         
         if (result.success) {
-            await viewEventAttendance(eventId);
             alert('Attendee removed successfully!');
+            
+            // Refresh attendance list
+            viewEventAttendance(eventId);
         } else {
             alert('Error: ' + result.message);
         }
