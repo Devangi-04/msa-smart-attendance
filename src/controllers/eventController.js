@@ -3,6 +3,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const ExcelJS = require('exceljs');
 const moment = require('moment');
+const { formatForExcel } = require('../utils/timeUtils');
 const prisma = require('../config/database');
 
 // Normalize department names to group similar departments
@@ -597,7 +598,7 @@ const exportAttendance = async (req, res) => {
           att.user.msaTeam || 'N/A',
           att.user.phone || 'N/A',
           att.user.email,
-          moment(att.reportingTime || att.markedAt).format('YYYY-MM-DD HH:mm:ss'),
+          formatForExcel(att.reportingTime || att.markedAt),
           att.lecturesMissed || 0,
           att.latitude.toFixed(6),
           att.longitude.toFixed(6)

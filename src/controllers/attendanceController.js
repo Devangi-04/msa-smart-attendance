@@ -1,5 +1,6 @@
 const QRCode = require('qrcode');
 const { validateLocation } = require('../utils/locationUtils');
+const { getCurrentIST } = require('../utils/timeUtils');
 const prisma = require('../config/database');
 
 const markAttendance = async (req, res) => {
@@ -111,7 +112,7 @@ const markAttendance = async (req, res) => {
         userId: userId,
         latitude: location.latitude,
         longitude: location.longitude,
-        reportingTime: new Date(), // Current time when marking attendance
+        reportingTime: getCurrentIST(), // Current time in IST when marking attendance
         lecturesMissed: lecturesMissed, // Validated 0-5 range
         device: device.substring(0, 255), // Limit length
         ipAddress: ipAddress
@@ -310,6 +311,62 @@ const updateLecturesMissed = async (req, res) => {
   }
 };
 
+// Update reporting time (admin only) - Fix for time reset issues
+const updateReportingTime = async (req, res) => {
+  try {
+    const { attendanceId } = req.params;
+    const { reportingTime } = req.body;
+
+    if (!reportingTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reporting time is required'
+      });
+    }
+
+    // Validate and convert the provided time
+    const newReportingTime = new Date(reportingTime);
+    if (isNaN(newReportingTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid reporting time format'
+      });
+    }
+
+    const updatedAttendance = await prisma.attendance.update({
+      where: { id: parseInt(attendanceId) },
+      data: { reportingTime: newReportingTime },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            rollNo: true
+          }
+        },
+        event: {
+          select: {
+            name: true,
+            date: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Reporting time updated successfully',
+      data: updatedAttendance
+    });
+  } catch (error) {
+    console.error('Error updating reporting time:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating reporting time'
+    });
+  }
+};
+
 // Delete attendance record (admin only)
 const deleteAttendance = async (req, res) => {
   try {
@@ -332,10 +389,180 @@ const deleteAttendance = async (req, res) => {
   }
 };
 
+// Admin: Add attendee to event manually
+const addAttendee = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { userId, latitude, longitude, lecturesMissed, reportingTime } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    // Check if event exists
+    const event = await prisma.event.findUnique({
+      where: { id: parseInt(eventId) }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if attendance already exists
+    const existingAttendance = await prisma.attendance.findFirst({
+      where: {
+        eventId: parseInt(eventId),
+        userId: parseInt(userId)
+      }
+    });
+
+    if (existingAttendance) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already marked as present for this event'
+      });
+    }
+
+    // Validate lectures missed (0-5 only)
+    let validatedLectures = parseInt(lecturesMissed) || 0;
+    if (validatedLectures < 0 || validatedLectures > 5) {
+      validatedLectures = 0;
+    }
+
+    // Use provided coordinates or event location as fallback
+    const attendanceLatitude = latitude ? parseFloat(latitude) : event.latitude;
+    const attendanceLongitude = longitude ? parseFloat(longitude) : event.longitude;
+
+    // Use provided reporting time or current IST time
+    const attendanceReportingTime = reportingTime ? new Date(reportingTime) : getCurrentIST();
+
+    // Create attendance record
+    const attendance = await prisma.attendance.create({
+      data: {
+        eventId: parseInt(eventId),
+        userId: parseInt(userId),
+        latitude: attendanceLatitude,
+        longitude: attendanceLongitude,
+        reportingTime: attendanceReportingTime,
+        lecturesMissed: validatedLectures,
+        device: 'Admin Added',
+        ipAddress: req.ip || 'Admin'
+      },
+      include: {
+        event: {
+          select: {
+            name: true,
+            date: true
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            email: true,
+            rollNo: true,
+            year: true,
+            division: true,
+            department: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Attendee added successfully',
+      data: attendance
+    });
+  } catch (error) {
+    console.error('Error adding attendee:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding attendee to event'
+    });
+  }
+};
+
+// Admin: Remove attendee from event
+const removeAttendee = async (req, res) => {
+  try {
+    const { eventId, userId } = req.params;
+
+    // Check if attendance record exists
+    const attendance = await prisma.attendance.findFirst({
+      where: {
+        eventId: parseInt(eventId),
+        userId: parseInt(userId)
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        event: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!attendance) {
+      return res.status(404).json({
+        success: false,
+        message: 'Attendance record not found'
+      });
+    }
+
+    // Delete the attendance record
+    await prisma.attendance.delete({
+      where: { id: attendance.id }
+    });
+
+    res.json({
+      success: true,
+      message: `Removed ${attendance.user.name} from ${attendance.event.name}`,
+      data: {
+        userName: attendance.user.name,
+        userEmail: attendance.user.email,
+        eventName: attendance.event.name
+      }
+    });
+  } catch (error) {
+    console.error('Error removing attendee:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing attendee from event'
+    });
+  }
+};
+
 module.exports = {
   markAttendance,
   getAttendanceList,
   checkAttendance,
   updateLecturesMissed,
-  deleteAttendance
+  updateReportingTime,
+  deleteAttendance,
+  addAttendee,
+  removeAttendee
 };
