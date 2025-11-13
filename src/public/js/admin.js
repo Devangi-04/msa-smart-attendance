@@ -247,7 +247,7 @@ function displayEvents(events) {
                         <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
+                        <button class="btn btn-outline-secondary" onclick="console.log('DELETE BUTTON CLICKED!', ${event.id}); testDelete(${event.id}, ${JSON.stringify(event.name)}); deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -443,7 +443,10 @@ async function saveEvent() {
 // Delete event
 let deleteInProgress = false;
 async function deleteEvent(eventId, eventName) {
+    console.log('=== DELETE EVENT FUNCTION CALLED ===');
     console.log('Delete event called:', { eventId, eventName });
+    console.log('Function arguments:', arguments);
+    console.log('deleteInProgress flag:', deleteInProgress);
     
     // Prevent multiple simultaneous delete operations
     if (deleteInProgress) {
@@ -1659,6 +1662,19 @@ window.addAttendeeToEvent = addAttendeeToEvent;
 window.removeAttendeeFromEvent = removeAttendeeFromEvent;
 window.deleteEvent = deleteEvent;
 window.editEvent = editEvent;
+
+// Debug: Verify functions are assigned
+console.log('Admin.js: Global functions assigned:', {
+    deleteEvent: typeof window.deleteEvent,
+    editEvent: typeof window.editEvent,
+    deleteEventFunction: window.deleteEvent
+});
+
+// Test function to verify onclick is working
+window.testDelete = function(eventId, eventName) {
+    console.log('TEST DELETE FUNCTION CALLED!', { eventId, eventName });
+    alert('Test delete function called for: ' + eventName);
+};
 window.showEventQR = showEventQR;
 window.viewEventAttendance = viewEventAttendance;
 window.viewDefaulterList = viewDefaulterList;
