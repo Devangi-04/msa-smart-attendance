@@ -404,16 +404,32 @@ async function saveEvent() {
                 eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             }
             
-            // Use setTimeout to prevent UI blocking
+            // Use setTimeout with longer delay for slower devices
             setTimeout(async () => {
                 try {
                     await loadEvents();
-                    alert(isEditMode ? 'Event updated successfully!' : 'Event created successfully!');
+                    // Use a shorter, less intrusive notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+                    notification.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${isEditMode ? 'Event updated successfully!' : 'Event created successfully!'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 3000);
                 } catch (error) {
                     console.error('Error reloading events:', error);
                     alert('Event saved but failed to refresh list. Please refresh the page.');
                 }
-            }, 100);
+            }, 300);
         } else {
             alert('Error saving event:\n\n' + (result.message || 'Unknown error'));
             console.error('Admin.js: Server error:', result);
@@ -477,16 +493,32 @@ async function deleteEvent(eventId, eventName) {
                 eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
             }
             
-            // Use setTimeout to prevent UI blocking
+            // Use setTimeout with longer delay for slower devices
             setTimeout(async () => {
                 try {
                     await loadEvents();
-                    alert('Event deleted successfully!');
+                    // Use a shorter, less intrusive notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+                    notification.innerHTML = `
+                        <i class="fas fa-trash me-2"></i>
+                        Event deleted successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 3000);
                 } catch (error) {
                     console.error('Error reloading events:', error);
                     alert('Event deleted but failed to refresh list. Please refresh the page.');
                 }
-            }, 100);
+            }, 300);
         } else {
             console.error('Delete failed:', result.message);
             alert(result.message || 'Error deleting event');

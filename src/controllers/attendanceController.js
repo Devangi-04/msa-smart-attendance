@@ -475,7 +475,15 @@ const addAttendee = async (req, res) => {
         userRollNo: existingAttendance.user.rollNo
       });
       
-      const markedAt = new Date(existingAttendance.markedAt || existingAttendance.reportingTime).toLocaleString();
+      const markedAt = new Date(existingAttendance.markedAt || existingAttendance.reportingTime).toLocaleString('en-IN', { 
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
       return res.status(400).json({
         success: false,
         message: `${existingAttendance.user.name} is already marked as present for this event`,
