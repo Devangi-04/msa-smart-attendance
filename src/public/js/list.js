@@ -359,7 +359,7 @@ function displayEvents(events) {
                             <button class="btn btn-sm btn-outline-primary" onclick="editEvent(${event.id})">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(${event.id}, '${event.name}')">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>

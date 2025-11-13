@@ -245,7 +245,7 @@ function displayEvents(events) {
                         <button class="btn btn-outline-warning" onclick="editEvent(${event.id})" title="Edit Event">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Delete Event">
+                        <button class="btn btn-outline-secondary" onclick="deleteEvent(${event.id}, ${JSON.stringify(event.name)})" title="Delete Event">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
