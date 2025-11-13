@@ -193,7 +193,9 @@ function displayEvents(events) {
     
     console.log('Admin.js: Rendering', events.length, 'events...');
     
-    eventList.innerHTML = events.map(event => {
+    // Use requestAnimationFrame to prevent UI blocking
+    requestAnimationFrame(() => {
+        const htmlContent = events.map(event => {
         const eventDate = new Date(event.date);
         const formattedDate = eventDate.toLocaleString('en-IN', { 
             dateStyle: 'medium', 
@@ -227,10 +229,10 @@ function displayEvents(events) {
         return `
             <tr>
                 <td><strong>${event.name}</strong></td>
-                <td>${formattedDate}</td>
-                <td>${event.venue || event.location || 'N/A'}</td>
+                <td><small>${formattedDate}</small></td>
+                <td><small>${event.venue || event.location || 'N/A'}</small></td>
                 <td>${statusBadge}</td>
-                <td>${attendanceDisplay}</td>
+                <td><span class="badge bg-info">${attendanceDisplay}</span></td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-primary" onclick="showEventQR(${event.id})" title="Show QR Code">
@@ -253,6 +255,9 @@ function displayEvents(events) {
             </tr>
         `;
     }).join('');
+        
+        eventList.innerHTML = htmlContent;
+    });
 }
 
 // Open event modal (for add or edit)
@@ -392,8 +397,23 @@ async function saveEvent() {
         
         if (result.success) {
             bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
-            await loadEvents();
-            alert(isEditMode ? 'Event updated successfully!' : 'Event created successfully!');
+            
+            // Show loading state
+            const eventList = document.getElementById('eventList');
+            if (eventList) {
+                eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+            }
+            
+            // Use setTimeout to prevent UI blocking
+            setTimeout(async () => {
+                try {
+                    await loadEvents();
+                    alert(isEditMode ? 'Event updated successfully!' : 'Event created successfully!');
+                } catch (error) {
+                    console.error('Error reloading events:', error);
+                    alert('Event saved but failed to refresh list. Please refresh the page.');
+                }
+            }, 100);
         } else {
             alert('Error saving event:\n\n' + (result.message || 'Unknown error'));
             console.error('Admin.js: Server error:', result);
@@ -450,8 +470,23 @@ async function deleteEvent(eventId, eventName) {
         
         if (result.success) {
             console.log('Event deleted successfully, reloading events...');
-            await loadEvents();
-            alert('Event deleted successfully!');
+            
+            // Show loading state
+            const eventList = document.getElementById('eventList');
+            if (eventList) {
+                eventList.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+            }
+            
+            // Use setTimeout to prevent UI blocking
+            setTimeout(async () => {
+                try {
+                    await loadEvents();
+                    alert('Event deleted successfully!');
+                } catch (error) {
+                    console.error('Error reloading events:', error);
+                    alert('Event deleted but failed to refresh list. Please refresh the page.');
+                }
+            }, 100);
         } else {
             console.error('Delete failed:', result.message);
             alert(result.message || 'Error deleting event');
