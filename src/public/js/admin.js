@@ -194,10 +194,7 @@ function displayEvents(events) {
     console.log('Admin.js: Rendering', events.length, 'events...');
     
     eventList.innerHTML = events.map(event => {
-        console.log('Event date from backend:', event.date);
         const eventDate = new Date(event.date);
-        console.log('Parsed date object:', eventDate);
-        console.log('Local string:', eventDate.toLocaleString('en-IN'));
         const formattedDate = eventDate.toLocaleString('en-IN', { 
             dateStyle: 'medium', 
             timeStyle: 'short' 
@@ -344,14 +341,9 @@ async function saveEvent() {
     }
     
     // datetime-local returns format like "2024-11-13T12:00" without timezone
-    // We need to append timezone info so backend interprets it correctly
-    // Convert to ISO string with timezone offset preserved
-    console.log('Original date input:', date);
-    const dateObj = new Date(date);
-    console.log('Date object:', dateObj);
-    console.log('Timezone offset (minutes):', dateObj.getTimezoneOffset());
-    const dateWithTimezone = dateObj.toISOString();
-    console.log('ISO string sent to backend:', dateWithTimezone);
+    // Convert to ISO string so backend stores it as UTC
+    // When displayed, JavaScript automatically converts UTC back to local time
+    const dateWithTimezone = new Date(date).toISOString();
     
     const eventData = {
         name,
