@@ -1475,16 +1475,17 @@ async function addAttendeeToEvent() {
 
 // Remove attendee from event
 async function removeAttendeeFromEvent(eventId, userId, userName) {
-    console.log('Remove attendee called:', { eventId, userId, userName });
-    
     if (!confirm(`Are you sure you want to remove ${userName} from this event?`)) {
         return;
     }
     
+    const token = safeGetToken();
+    if (!token) {
+        alert('Please login to remove attendees');
+        return;
+    }
+    
     try {
-        const token = safeGetToken();
-        console.log('Removing attendee with URL:', `${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`);
-        
         const response = await fetch(`${API_BASE_URL}/attendance/events/${eventId}/users/${userId}`, {
             method: 'DELETE',
             headers: {
@@ -1493,13 +1494,10 @@ async function removeAttendeeFromEvent(eventId, userId, userName) {
         });
         
         const result = await response.json();
-        console.log('Remove attendee response:', result);
         
         if (result.success) {
+            await viewEventAttendance(eventId);
             alert('Attendee removed successfully!');
-            
-            // Refresh attendance list
-            viewEventAttendance(eventId);
         } else {
             alert('Error: ' + result.message);
         }
