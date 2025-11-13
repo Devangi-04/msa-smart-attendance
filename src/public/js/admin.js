@@ -615,7 +615,7 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
                                 <button class="btn btn-outline-primary" id="edit-btn-${record.id}" onclick="editLecturesMissed(${record.id})" title="Edit lectures missed">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="window.removeAttendeeFromEvent(${eventId}, ${record.userId}, '${(user.name || 'Unknown').replace(/'/g, "\\'")}'))" title="Remove attendee">
+                                <button class="btn btn-outline-danger remove-attendee-btn" data-event-id="${eventId}" data-user-id="${record.userId}" data-user-name="${user.name || 'Unknown'}" title="Remove attendee">
                                     <i class="fas fa-user-minus"></i>
                                 </button>
                             </div>
@@ -642,6 +642,17 @@ async function viewEventAttendance(eventId, showDetailsOnClose = false) {
             `;
             
             content.innerHTML = html;
+            
+            // Add event delegation for remove attendee buttons
+            content.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-attendee-btn')) {
+                    const btn = e.target.closest('.remove-attendee-btn');
+                    const eventId = btn.dataset.eventId;
+                    const userId = btn.dataset.userId;
+                    const userName = btn.dataset.userName;
+                    removeAttendeeFromEvent(eventId, userId, userName);
+                }
+            });
         } else {
             content.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${result.message || 'Failed to load attendance records'}</div>`;
         }
