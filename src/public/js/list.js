@@ -264,6 +264,7 @@ function displayEvents(events) {
     
     console.log('Displaying events:', events.length);
     const isAdmin = currentUser && currentUser.role === 'ADMIN';
+    console.log('List.js: Current user role:', currentUser?.role, 'isAdmin:', isAdmin);
     
     if (!events || events.length === 0) {
         container.innerHTML = `
@@ -554,36 +555,92 @@ async function saveEvent() {
 }
 
 // Delete event
+let deleteInProgress = false;
 async function deleteEvent(eventId, eventName) {
-    if (!confirm(`Are you sure you want to delete "${eventName}"?`)) {
+    console.log('List.js: Delete event called:', { eventId, eventName });
+    
+    // Prevent multiple simultaneous delete operations
+    if (deleteInProgress) {
+        console.log('List.js: Delete already in progress, ignoring duplicate call');
         return;
     }
     
+    if (!confirm(`Are you sure you want to delete "${eventName}"?\n\nThis action cannot be undone.`)) {
+        console.log('List.js: Delete cancelled by user');
+        return;
+    }
+    
+    deleteInProgress = true;
+    
     const token = safeGetToken();
+    console.log('List.js: Token available:', !!token);
+    
     if (!token) {
         alert('Please login to delete events');
+        deleteInProgress = false;
         return;
     }
     
     try {
+        console.log('List.js: Making DELETE request to:', `${API_BASE_URL}/events/${eventId}`);
+        
         const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
         
-        const data = await response.json();
+        console.log('List.js: Delete response status:', response.status);
         
-        if (data.success) {
-            await loadEvents();
-            alert('Event deleted successfully!');
+        const result = await response.json();
+        console.log('List.js: Delete response data:', result);
+        
+        if (result.success) {
+            console.log('List.js: Event deleted successfully, reloading events...');
+            
+            // Show loading state
+            const container = document.getElementById('eventsContainer');
+            if (container) {
+                container.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+            }
+            
+            // Use setTimeout with longer delay for slower devices
+            setTimeout(async () => {
+                try {
+                    await loadEvents();
+                    // Use a shorter, less intrusive notification
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+                    notification.innerHTML = `
+                        <i class="fas fa-trash me-2"></i>
+                        Event deleted successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    // Auto-remove after 3 seconds
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 3000);
+                } catch (error) {
+                    console.error('List.js: Error reloading events:', error);
+                    alert('Event deleted but failed to refresh list. Please refresh the page.');
+                }
+            }, 300);
         } else {
-            alert(data.message || 'Error deleting event');
+            console.error('List.js: Delete failed:', result.message);
+            alert(result.message || 'Error deleting event');
         }
     } catch (error) {
-        console.error('Error deleting event:', error);
+        console.error('List.js: Error deleting event:', error);
         alert('Error deleting event. Please try again.');
+    } finally {
+        deleteInProgress = false;
     }
 }
 
