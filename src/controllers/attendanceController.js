@@ -395,6 +395,14 @@ const addAttendee = async (req, res) => {
     const { eventId } = req.params;
     const { userId, latitude, longitude, lecturesMissed, reportingTime } = req.body;
 
+    console.log('Add attendee request:', {
+      eventId,
+      userId,
+      lecturesMissed,
+      reportingTime,
+      requestBody: req.body
+    });
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -416,15 +424,29 @@ const addAttendee = async (req, res) => {
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) }
+      where: { id: parseInt(userId) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        rollNo: true
+      }
     });
 
     if (!user) {
+      console.log('User not found with ID:', userId);
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
+
+    console.log('User found for adding:', {
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      userRollNo: user.rollNo
+    });
 
     // Check if attendance already exists
     const existingAttendance = await prisma.attendance.findFirst({
@@ -435,21 +457,33 @@ const addAttendee = async (req, res) => {
       include: {
         user: {
           select: {
+            id: true,
             name: true,
-            email: true
+            email: true,
+            rollNo: true
           }
         }
       }
     });
 
     if (existingAttendance) {
+      console.log('Existing attendance found:', {
+        attendanceId: existingAttendance.id,
+        userId: existingAttendance.userId,
+        userName: existingAttendance.user.name,
+        userEmail: existingAttendance.user.email,
+        userRollNo: existingAttendance.user.rollNo
+      });
+      
       const markedAt = new Date(existingAttendance.markedAt || existingAttendance.reportingTime).toLocaleString();
       return res.status(400).json({
         success: false,
         message: `${existingAttendance.user.name} is already marked as present for this event`,
         details: {
+          userId: existingAttendance.user.id,
           userName: existingAttendance.user.name,
           userEmail: existingAttendance.user.email,
+          userRollNo: existingAttendance.user.rollNo,
           markedAt: markedAt,
           lecturesMissed: existingAttendance.lecturesMissed || 0
         }

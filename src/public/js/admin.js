@@ -1503,6 +1503,11 @@ async function addAttendeeToEvent() {
     const lecturesMissed = document.getElementById('attendeeLecturesMissed').value;
     const reportingTime = document.getElementById('attendeeReportingTime').value;
     
+    // Get selected user details for debugging
+    const selectedUserElement = document.getElementById('selectUser');
+    const selectedUserText = selectedUserElement.options[selectedUserElement.selectedIndex]?.text;
+    console.log('Adding attendee:', { userId, selectedUserText, lecturesMissed, reportingTime });
+    
     if (!userId) {
         alert('Please select a user');
         return;
@@ -1545,8 +1550,11 @@ async function addAttendeeToEvent() {
             // Show detailed error message for duplicate attendance
             if (result.details && result.details.userName) {
                 const details = result.details;
+                console.log('Duplicate attendance error details:', details);
                 alert(`${result.message}\n\nDetails:\n` +
-                      `• User: ${details.userName}\n` +
+                      `• User ID: ${details.userId}\n` +
+                      `• Name: ${details.userName}\n` +
+                      `• Roll No: ${details.userRollNo || 'N/A'}\n` +
                       `• Email: ${details.userEmail}\n` +
                       `• Marked At: ${details.markedAt}\n` +
                       `• Lectures Missed: ${details.lecturesMissed}`);
