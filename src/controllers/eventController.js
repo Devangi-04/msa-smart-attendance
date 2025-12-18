@@ -550,6 +550,20 @@ const exportAttendance = async (req, res) => {
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow++;
 
+    if (event.venue) {
+      worksheet.getCell(`A${currentRow}`).value = 'Venue:';
+      worksheet.getCell(`B${currentRow}`).value = event.venue;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+    }
+
+    if (event.description) {
+      worksheet.getCell(`A${currentRow}`).value = 'Description:';
+      worksheet.getCell(`B${currentRow}`).value = event.description;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+    }
+
     worksheet.getCell(`A${currentRow}`).value = 'Total Attendees:';
     worksheet.getCell(`B${currentRow}`).value = event.attendance.length;
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
@@ -1137,6 +1151,20 @@ const exportDefaulterList = async (req, res) => {
     worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('YYYY-MM-DD HH:mm');
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow++;
+
+    if (event.venue) {
+      worksheet.getCell(`A${currentRow}`).value = 'Venue:';
+      worksheet.getCell(`B${currentRow}`).value = event.venue;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+    }
+
+    if (event.description) {
+      worksheet.getCell(`A${currentRow}`).value = 'Description:';
+      worksheet.getCell(`B${currentRow}`).value = event.description;
+      worksheet.getCell(`A${currentRow}`).font = { bold: true };
+      currentRow++;
+    }
 
     worksheet.getCell(`A${currentRow}`).value = 'Total Attended:';
     worksheet.getCell(`B${currentRow}`).value = attendedUserIds.length;
