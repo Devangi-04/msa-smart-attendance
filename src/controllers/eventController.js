@@ -546,7 +546,7 @@ const exportAttendance = async (req, res) => {
     currentRow++;
 
     worksheet.getCell(`A${currentRow}`).value = 'Event Date:';
-    worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('YYYY-MM-DD HH:mm');
+    worksheet.getCell(`B${currentRow}`).value = formatForExcel(event.date);
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow++;
 
@@ -1148,7 +1148,7 @@ const exportDefaulterList = async (req, res) => {
     currentRow++;
 
     worksheet.getCell(`A${currentRow}`).value = 'Event Date:';
-    worksheet.getCell(`B${currentRow}`).value = moment(event.date).format('YYYY-MM-DD HH:mm');
+    worksheet.getCell(`B${currentRow}`).value = formatForExcel(event.date);
     worksheet.getCell(`A${currentRow}`).font = { bold: true };
     currentRow++;
 
